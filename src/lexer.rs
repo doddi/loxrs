@@ -5,8 +5,8 @@ use crate::token::{ Token, FloatWrapper };
 
 fn tokenize(content: &'static str) -> Result<Vec<Token>, String> {
     let mut tokens: Vec<Token> = Vec::new();
+    let mut line_no = 0;
 
-    // TODO: loop in lines so that any error detected we can specify the line number
     let mut char_iter = content.char_indices().peekable();
 
     while char_iter.peek().is_some() {
@@ -157,8 +157,9 @@ fn tokenize(content: &'static str) -> Result<Vec<Token>, String> {
                 }
             }
 
-            ' ' | '\r' | '\t' | '\n' => (),
-            _ => panic!("Unrecognised character: {}", ch),
+            ' ' | '\r' | '\t' => (),
+            '\n' => line_no += 1,
+            _ => return Err(format!("Unrecognised token '{}' at line: {}", ch, line_no)),
         }
     }
 
@@ -399,5 +400,16 @@ mod test {
         assert_eq!(response.get(8).unwrap(), &Token::Semicolon);
         assert_eq!(response.get(9).unwrap(), &Token::RightBrace);
         assert_eq!(response.get(10).unwrap(), &Token::Eof);
+    }
+
+    #[test]
+    fn detect_invalid_token() {
+        let multi_line = r#"
+            //Some comment
+            $
+            //Other comment
+        "#;
+        let response = tokenize(multi_line);
+        assert!(response.is_err_and(|value| value.contains("Unrecognised token '$' at line: 2")));
     }
 }
