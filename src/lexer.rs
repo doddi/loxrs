@@ -1,6 +1,4 @@
-use core::panic;
-
-use crate::token::{ Token, FloatWrapper };
+use crate::token::Token;
 
 
 fn tokenize(content: &'static str) -> Result<Vec<Token>, String> {
@@ -122,7 +120,7 @@ fn tokenize(content: &'static str) -> Result<Vec<Token>, String> {
 
                 let slice = &content[start..=end];
                 match slice.parse() {
-                    Ok(value) => tokens.push(Token::Number(FloatWrapper::Real(value))),
+                    Ok(value) => tokens.push(Token::Number(value)),
                     Err(_) => return Err(format!("unable to parse number: {}", slice)),
                 }
             }
@@ -306,10 +304,10 @@ mod test {
     #[test]
     fn detect_number() {
         let mut response = tokenize("123.0").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Number(FloatWrapper::Real(123.0)));
+        assert_eq!(response.get(0).unwrap(), &Token::Number(123.0));
 
         response = tokenize("456").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Number(FloatWrapper::Real(456.0)));
+        assert_eq!(response.get(0).unwrap(), &Token::Number(456.0));
 
         assert!(tokenize("1.2.3").is_err_and(|err| err.contains("unable to parse number")));
     }

@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum Token {
     LeftParen,
     RightParen,
@@ -23,7 +23,7 @@ pub enum Token {
 
     Identifier(&'static str),
     String(&'static str),
-    Number(FloatWrapper),
+    Number(f32),
 
     And,
     Class,
@@ -45,21 +45,3 @@ pub enum Token {
     Eof,
 }
 
-#[derive(Debug)]
-pub enum FloatWrapper {
-    Real(f32),
-    Nan,
-}
-
-impl PartialEq for FloatWrapper {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (FloatWrapper::Real(lhs), FloatWrapper::Real(rhs)) => lhs == rhs,
-            _ => false,
-        }
-    }
-}
-
-impl Eq for FloatWrapper {
-    
-}
