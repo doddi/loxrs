@@ -1,7 +1,7 @@
 use crate::token::Token;
 
 
-pub fn tokenize<'a>(content: &'a str, tokens: &mut Vec<Token>) -> Result<(), String> {
+pub fn tokenize<'a>(content: &'a str, tokens: &mut Vec<Token<'a>>) -> Result<(), String> {
     let mut line_no = 0;
 
     let mut char_iter = content.char_indices().peekable();
@@ -172,241 +172,283 @@ mod test {
     #[test]
     fn detect_eof() {
         let content = "";
+        let mut tokens: Vec<Token<'_>> = Vec::new();
 
-        let response = tokenize(content).unwrap();
-        assert_eq!(response.len(), 1);
-        assert_eq!(response.get(0).unwrap(), &Token::Eof);
+        let _ = tokenize(content, &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 1);
+        assert_eq!(tokens.get(0).unwrap(), &Token::Eof);
     }
 
     #[test]
     fn detect_parenthesis() {
         let content = "()";
+        let mut tokens: Vec<Token<'_>> = Vec::new();
  
-        let response = tokenize(content).unwrap();
-        assert_eq!(response.len(), 3);
-        assert_eq!(response.get(0).unwrap(), &Token::LeftParen);
-        assert_eq!(response.get(1).unwrap(), &Token::RightParen);
-        assert_eq!(response.get(2).unwrap(), &Token::Eof);
+        let _ = tokenize(content, &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 3);
+        assert_eq!(tokens.get(0).unwrap(), &Token::LeftParen);
+        assert_eq!(tokens.get(1).unwrap(), &Token::RightParen);
+        assert_eq!(tokens.get(2).unwrap(), &Token::Eof);
     }
 
     #[test]
     fn detect_brace() {
         let content = "{}";
+        let mut tokens: Vec<Token<'_>> = Vec::new();
  
-        let response = tokenize(content).unwrap();
-        assert_eq!(response.len(), 3);
-        assert_eq!(response.get(0).unwrap(), &Token::LeftBrace);
-        assert_eq!(response.get(1).unwrap(), &Token::RightBrace);
-        assert_eq!(response.get(2).unwrap(), &Token::Eof);
+        let _ = tokenize(content, &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 3);
+        assert_eq!(tokens.get(0).unwrap(), &Token::LeftBrace);
+        assert_eq!(tokens.get(1).unwrap(), &Token::RightBrace);
+        assert_eq!(tokens.get(2).unwrap(), &Token::Eof);
     }
 
     #[test]
     fn detect_remainig_constants() {
         let content = ",.-+;/*";
+        let mut tokens: Vec<Token<'_>> = Vec::new();
  
-        let response = tokenize(content).unwrap();
-        assert_eq!(response.len(), 8);
-        assert_eq!(response.get(0).unwrap(), &Token::Comma);
-        assert_eq!(response.get(1).unwrap(), &Token::Dot);
-        assert_eq!(response.get(2).unwrap(), &Token::Minus);
-        assert_eq!(response.get(3).unwrap(), &Token::Plus);
-        assert_eq!(response.get(4).unwrap(), &Token::Semicolon);
-        assert_eq!(response.get(5).unwrap(), &Token::Slash);
-        assert_eq!(response.get(6).unwrap(), &Token::Star);
-        assert_eq!(response.get(7).unwrap(), &Token::Eof);
+        let _ = tokenize(content, &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 8);
+        assert_eq!(tokens.get(0).unwrap(), &Token::Comma);
+        assert_eq!(tokens.get(1).unwrap(), &Token::Dot);
+        assert_eq!(tokens.get(2).unwrap(), &Token::Minus);
+        assert_eq!(tokens.get(3).unwrap(), &Token::Plus);
+        assert_eq!(tokens.get(4).unwrap(), &Token::Semicolon);
+        assert_eq!(tokens.get(5).unwrap(), &Token::Slash);
+        assert_eq!(tokens.get(6).unwrap(), &Token::Star);
+        assert_eq!(tokens.get(7).unwrap(), &Token::Eof);
     }
     
     #[test]
     fn detect_bang() {
-        let mut response = tokenize("!").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::Bang);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        let _ = tokenize("!", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::Bang);
 
-        response = tokenize("!=").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::BangEqual);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("!=", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::BangEqual);
     }
 
     #[test]
     fn detect_equal() {
-        let mut response = tokenize("=").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::Equal);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        let _ = tokenize("=", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::Equal);
 
-        response = tokenize("==").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::EqualEqual);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("==", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::EqualEqual);
     }
 
     #[test]
     fn detect_greater() {
-        let mut response = tokenize(">").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::Greater);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        let _ = tokenize(">", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::Greater);
 
-        response = tokenize(">=").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::GreaterEqual);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize(">=", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::GreaterEqual);
     }
 
     #[test]
     fn detect_less() {
-        let mut response = tokenize("<").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::Less);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
 
-        response = tokenize("<=").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::LessEqual);
+        let _ = tokenize("<", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::Less);
+
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("<=", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::LessEqual);
     }
 
     #[test]
     fn detect_comment() {
-        let mut response = tokenize("/").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::Slash);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
 
-        response = tokenize("// This is a comment").unwrap();
-        assert_eq!(response.len(), 1);
-        assert_eq!(response.get(0).unwrap(), &Token::Eof);
+        let _ = tokenize("/", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::Slash);
+
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("// This is a comment", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 1);
+        assert_eq!(tokens.get(0).unwrap(), &Token::Eof);
 
         let multi_line = r#"{
             // This is a comment
         }
         "#;
-        let response = tokenize(multi_line).unwrap();
-        assert_eq!(response.len(), 3);
-        assert_eq!(response.get(0).unwrap(), &Token::LeftBrace);
-        assert_eq!(response.get(1).unwrap(), &Token::RightBrace);
-        assert_eq!(response.get(2).unwrap(), &Token::Eof);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        let _ = tokenize(multi_line, &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 3);
+        assert_eq!(tokens.get(0).unwrap(), &Token::LeftBrace);
+        assert_eq!(tokens.get(1).unwrap(), &Token::RightBrace);
+        assert_eq!(tokens.get(2).unwrap(), &Token::Eof);
     }
 
     #[test]
     fn detect_string() {
-        let response = tokenize("\"Foo\"").unwrap();
-        assert_eq!(response.len(), 2);
-        assert_eq!(response.get(0).unwrap(), &Token::String("Foo"));
-        assert_eq!(response.get(1).unwrap(), &Token::Eof);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        let _ = tokenize("\"Foo\"", &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens.get(0).unwrap(), &Token::String("Foo"));
+        assert_eq!(tokens.get(1).unwrap(), &Token::Eof);
 
         let multi_line = r#"{
             "This is a string"
         }
         "#;
-        let response = tokenize(multi_line).unwrap();
-        assert_eq!(response.len(), 4);
-        assert_eq!(response.get(0).unwrap(), &Token::LeftBrace);
-        assert_eq!(response.get(1).unwrap(), &Token::String("This is a string"));
-        assert_eq!(response.get(2).unwrap(), &Token::RightBrace);
-        assert_eq!(response.get(3).unwrap(), &Token::Eof);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        let _ = tokenize(multi_line, &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 4);
+        assert_eq!(tokens.get(0).unwrap(), &Token::LeftBrace);
+        assert_eq!(tokens.get(1).unwrap(), &Token::String("This is a string"));
+        assert_eq!(tokens.get(2).unwrap(), &Token::RightBrace);
+        assert_eq!(tokens.get(3).unwrap(), &Token::Eof);
     }
 
     #[test]
     fn detect_number() {
-        let mut response = tokenize("123.0").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Number(123.0));
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        let _ = tokenize("123.0", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Number(123.0));
 
-        response = tokenize("456").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Number(456.0));
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("456", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Number(456.0));
 
-        assert!(tokenize("1.2.3").is_err_and(|err| err.contains("unable to parse number")));
+        assert!(tokenize("1.2.3", &mut tokens).is_err_and(|err| err.contains("unable to parse number")));
     }
 
     #[test]
     fn detect_keywords() {
-        let mut response;
-        response = tokenize("and").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::And);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("and", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::And);
 
-        response = tokenize("class").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Class);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("class", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Class);
 
-        response = tokenize("else").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Else);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("else", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Else);
 
-        response = tokenize("false").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::False);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("false", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::False);
 
-        response = tokenize("fun").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Fun);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("fun", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Fun);
 
-        response = tokenize("for").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::For);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("for", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::For);
 
-        response = tokenize("if").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::If);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("if", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::If);
 
-        response = tokenize("nil").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Nil);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("nil", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Nil);
 
-        response = tokenize("or").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Or);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("or", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Or);
 
-        response = tokenize("print").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Print);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("print", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Print);
 
-        response = tokenize("return").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Return);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("return", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Return);
 
-        response = tokenize("super").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Super);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("super", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Super);
 
-        response = tokenize("this").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::This);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("this", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::This);
 
-        response = tokenize("true").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::True);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("true", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::True);
 
-        response = tokenize("var").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Var);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("var", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Var);
 
-        response = tokenize("while").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::While);
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("while", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::While);
     }
 
     #[test]
     fn detect_identifier() {
-        let mut response;
-        response = tokenize("hello").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Identifier("hello"));
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("hello", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Identifier("hello"));
 
-        response = tokenize("_hello").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Identifier("_hello"));
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("_hello", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Identifier("_hello"));
 
-        response = tokenize("_hel_lo_").unwrap();
-        assert_eq!(response.get(0).unwrap(), &Token::Identifier("_hel_lo_"));
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+        _ = tokenize("_hel_lo_", &mut tokens).unwrap();
+        assert_eq!(tokens.get(0).unwrap(), &Token::Identifier("_hel_lo_"));
     }
 
     #[test]
     fn detect_handful_of_tokens() {
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+
         let multi_line = r#"
         {
             // This is the start
             var myVar = print("statement");
         }
         "#;
-        let response = tokenize(multi_line).unwrap();
-        assert_eq!(response.len(), 11);
-        assert_eq!(response.get(0).unwrap(), &Token::LeftBrace);
-        assert_eq!(response.get(1).unwrap(), &Token::Var);
-        assert_eq!(response.get(2).unwrap(), &Token::Identifier("myVar"));
-        assert_eq!(response.get(3).unwrap(), &Token::Equal);
-        assert_eq!(response.get(4).unwrap(), &Token::Print);
-        assert_eq!(response.get(5).unwrap(), &Token::LeftParen);
-        assert_eq!(response.get(6).unwrap(), &Token::String("statement"));
-        assert_eq!(response.get(7).unwrap(), &Token::RightParen);
-        assert_eq!(response.get(8).unwrap(), &Token::Semicolon);
-        assert_eq!(response.get(9).unwrap(), &Token::RightBrace);
-        assert_eq!(response.get(10).unwrap(), &Token::Eof);
+        let _ = tokenize(multi_line, &mut tokens).unwrap();
+        assert_eq!(tokens.len(), 11);
+        assert_eq!(tokens.get(0).unwrap(), &Token::LeftBrace);
+        assert_eq!(tokens.get(1).unwrap(), &Token::Var);
+        assert_eq!(tokens.get(2).unwrap(), &Token::Identifier("myVar"));
+        assert_eq!(tokens.get(3).unwrap(), &Token::Equal);
+        assert_eq!(tokens.get(4).unwrap(), &Token::Print);
+        assert_eq!(tokens.get(5).unwrap(), &Token::LeftParen);
+        assert_eq!(tokens.get(6).unwrap(), &Token::String("statement"));
+        assert_eq!(tokens.get(7).unwrap(), &Token::RightParen);
+        assert_eq!(tokens.get(8).unwrap(), &Token::Semicolon);
+        assert_eq!(tokens.get(9).unwrap(), &Token::RightBrace);
+        assert_eq!(tokens.get(10).unwrap(), &Token::Eof);
     }
 
     #[test]
     fn detect_invalid_token() {
+        let mut tokens: Vec<Token<'_>> = Vec::new();
+
         let multi_line = r#"
             //Some comment
             $
             //Other comment
         "#;
-        let response = tokenize(multi_line);
+        let response = tokenize(multi_line, &mut tokens);
         assert!(response.is_err_and(|value| value.contains("Unrecognised token '$' at line: 2")));
     }
 }

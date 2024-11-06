@@ -1,0 +1,4 @@
+{
+    // This is the start
+    var myVar = print("statement");
+}

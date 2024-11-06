@@ -44,7 +44,9 @@ fn run_file<'a>(file: &'a str) {
 fn run<'a>(source: &'a str) {
     println!("{}", source);
     let mut tokens: Vec<Token> = Vec::new();
-    let lexer = lexer::tokenize(source, &mut tokens);
+    let _lexer = lexer::tokenize(source, &mut tokens);
+
+    println!("{:?}", tokens)
 }
 
 fn setup_logging() {
