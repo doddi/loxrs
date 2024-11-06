@@ -1,8 +1,7 @@
 use crate::token::Token;
 
 
-fn tokenize(content: &'static str) -> Result<Vec<Token>, String> {
-    let mut tokens: Vec<Token> = Vec::new();
+pub fn tokenize<'a>(content: &'a str, tokens: &mut Vec<Token>) -> Result<(), String> {
     let mut line_no = 0;
 
     let mut char_iter = content.char_indices().peekable();
@@ -162,7 +161,7 @@ fn tokenize(content: &'static str) -> Result<Vec<Token>, String> {
     }
 
     tokens.push(Token::Eof);
-    Ok(tokens)
+    Ok(())
 }
 
 

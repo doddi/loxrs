@@ -5,6 +5,7 @@ use core::panic;
 use std::{fs::File, io::{self, BufRead, BufReader, Read}};
 
 use clap::Parser;
+use token::Token;
 use tracing::{info, Level};
 
 #[derive(Parser, Debug)]
@@ -12,17 +13,6 @@ use tracing::{info, Level};
 struct Args {
     #[arg(short, long)]
     file: Option<String>,
-}
-
-fn main() {
-    setup_logging();
-
-    let args = Args::parse();
-
-    match args.file {
-        Some(file) => run_file(&file),
-        None => run_prompt(),
-    }
 }
 
 fn run_prompt() {
@@ -34,7 +24,7 @@ fn run_prompt() {
     }
 }
 
-fn run_file(file: &str) {
+fn run_file<'a>(file: &'a str) {
     info!("Running {} script file", file);
 
     match File::open(file) {
@@ -51,8 +41,10 @@ fn run_file(file: &str) {
     }
 }
 
-fn run(source: &str) {
+fn run<'a>(source: &'a str) {
     println!("{}", source);
+    let mut tokens: Vec<Token> = Vec::new();
+    let lexer = lexer::tokenize(source, &mut tokens);
 }
 
 fn setup_logging() {
@@ -63,3 +55,15 @@ fn setup_logging() {
     tracing::subscriber::set_global_default(subscriber)
         .expect("setting default subscriber failed");
 }
+
+fn main() {
+    setup_logging();
+
+    let args = Args::parse();
+
+    match args.file {
+        Some(file) => run_file(&file),
+        None => run_prompt(),
+    }
+}
+

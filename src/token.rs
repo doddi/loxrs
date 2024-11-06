@@ -1,5 +1,5 @@
 #[derive(Debug, PartialEq)]
-pub enum Token {
+pub enum Token<'a> {
     LeftParen,
     RightParen,
     LeftBrace,
@@ -21,8 +21,8 @@ pub enum Token {
     Less,
     LessEqual,
 
-    Identifier(&'static str),
-    String(&'static str),
+    Identifier(&'a str),
+    String(&'a str),
     Number(f32),
 
     And,
