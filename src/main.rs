@@ -1,11 +1,14 @@
-pub(crate) mod token;
 mod lexer;
+pub(crate) mod token;
 
 use core::panic;
-use std::{fs::File, io::{self, BufRead, BufReader, Read}};
+use std::{
+    fs::File,
+    io::{self, BufRead, BufReader, Read},
+};
 
 use clap::Parser;
-use token::Token;
+use lexer::Lexer;
 use tracing::{info, Level};
 
 #[derive(Parser, Debug)]
@@ -34,19 +37,25 @@ fn run_file<'a>(file: &'a str) {
 
             match buffer.read_to_string(&mut content) {
                 Ok(_) => run(&content),
-                Err(err) => panic!("unable to read in the content of the script: {}, {}", file, err),
+                Err(err) => panic!(
+                    "unable to read in the content of the script: {}, {}",
+                    file, err
+                ),
             }
-        },
+        }
         Err(err) => println!("Unable to run script file: {}, {}", file, err),
     }
 }
 
 fn run<'a>(source: &'a str) {
     println!("{}", source);
-    let mut tokens: Vec<Token> = Vec::new();
-    let _lexer = lexer::tokenize(source, &mut tokens);
+    let mut lexer = Lexer::new();
 
-    println!("{:?}", tokens)
+    if let Ok(()) = lexer.tokenize(source) {
+        for token in lexer.into_iter() {
+            print!("{:?}, ", token);
+        }
+    }
 }
 
 fn setup_logging() {
@@ -54,8 +63,7 @@ fn setup_logging() {
         .with_max_level(Level::TRACE)
         .finish();
 
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("setting default subscriber failed");
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }
 
 fn main() {
@@ -68,4 +76,3 @@ fn main() {
         None => run_prompt(),
     }
 }
-

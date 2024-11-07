@@ -44,4 +44,3 @@ pub enum Token<'a> {
 
     Eof,
 }
-
