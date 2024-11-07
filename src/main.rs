@@ -1,5 +1,6 @@
 mod lexer;
-pub(crate) mod token;
+pub(crate) mod tokens;
+mod ast;
 
 use core::panic;
 use std::{
@@ -7,8 +8,11 @@ use std::{
     io::{self, BufRead, BufReader, Read},
 };
 
+use ast::parse;
 use clap::Parser;
 use lexer::Lexer;
+use tokens::Tokens;
+//use ast::Parser as LoxParser;
 use tracing::{info, Level};
 
 #[derive(Parser, Debug)]
@@ -27,7 +31,7 @@ fn run_prompt() {
     }
 }
 
-fn run_file<'a>(file: &'a str) {
+fn run_file(file: &str) {
     info!("Running {} script file", file);
 
     match File::open(file) {
@@ -47,14 +51,13 @@ fn run_file<'a>(file: &'a str) {
     }
 }
 
-fn run<'a>(source: &'a str) {
+fn run(source: &str) {
     println!("{}", source);
     let mut lexer = Lexer::new();
 
     if let Ok(()) = lexer.tokenize(source) {
-        for token in lexer.into_iter() {
-            print!("{:?}, ", token);
-        }
+        let mut tokens = lexer.get();
+        let _ast = parse(&mut tokens);
     }
 }
 

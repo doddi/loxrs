@@ -1,5 +1,6 @@
-use crate::token::Token;
+use crate::tokens::{Token, Tokens};
 
+#[derive(Debug)]
 pub struct Lexer<'a> {
     tokens: Vec<Token<'a>>,
 }
@@ -7,6 +8,10 @@ pub struct Lexer<'a> {
 impl<'a> Lexer<'a> {
     pub fn new() -> Self {
         Self { tokens: Vec::new() }
+    }
+
+    pub(crate) fn get(self) -> Tokens<'a> {
+        Tokens::new(self.tokens)
     }
 
     pub fn tokenize(&mut self, content: &'a str) -> Result<(), String> {
@@ -108,7 +113,7 @@ impl<'a> Lexer<'a> {
                     let mut end = start;
                     while char_iter
                         .peek()
-                        .is_some_and(|(_, value)| value.is_digit(10) || *value == '.')
+                        .is_some_and(|(_, value)| value.is_ascii_digit() || *value == '.')
                     {
                         let (i, _) = char_iter.next().unwrap();
                         end = i;
