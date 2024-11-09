@@ -45,7 +45,7 @@ pub enum Token<'a> {
     Eof,
 }
 
-pub(crate) struct Tokens<'a> {
+pub struct Tokens<'a> {
     inner: Vec<Token<'a>>,
     index: usize,
 }

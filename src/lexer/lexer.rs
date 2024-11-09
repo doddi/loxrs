@@ -1,4 +1,4 @@
-use crate::tokens::{Token, Tokens};
+use super::tokens::{ Tokens, Token };
 
 #[derive(Debug)]
 pub struct Lexer<'a> {
@@ -10,7 +10,7 @@ impl<'a> Lexer<'a> {
         Self { tokens: Vec::new() }
     }
 
-    pub(crate) fn get(self) -> Tokens<'a> {
+    pub fn get(self) -> Tokens<'a> {
         Tokens::new(self.tokens)
     }
 
@@ -94,18 +94,19 @@ impl<'a> Lexer<'a> {
                 },
 
                 '"' => {
-                    let start = pos + 1;
+                    let start = pos;
                     let mut end = start;
                     while char_iter.peek().is_some_and(|(_, value)| *value != '"') {
                         let (i, _) = char_iter.next().unwrap();
                         end = i;
                     }
+                    // Account for the end '"'
+                    char_iter.next();
 
+                    end += 1;
                     let slice = &content[start..=end];
                     self.tokens.push(Token::String(slice));
 
-                    // Account for the end '"'
-                    char_iter.next();
                 }
 
                 '0'..='9' => {
@@ -319,7 +320,7 @@ mod test {
         let mut lexer = Lexer::new();
         let _ = lexer.tokenize("\"Foo\"").unwrap();
         let mut iter = lexer.into_iter();
-        assert_eq!(iter.next().unwrap(), Token::String("Foo"));
+        assert_eq!(iter.next().unwrap(), Token::String("\"Foo\""));
         assert_eq!(iter.next().unwrap(), Token::Eof);
 
         let multi_line = r#"{
@@ -330,7 +331,7 @@ mod test {
         let _ = lexer.tokenize(multi_line).unwrap();
         let mut iter = lexer.into_iter();
         assert_eq!(iter.next().unwrap(), Token::LeftBrace);
-        assert_eq!(iter.next().unwrap(), Token::String("This is a string"));
+        assert_eq!(iter.next().unwrap(), Token::String("\"This is a string\""));
         assert_eq!(iter.next().unwrap(), Token::RightBrace);
         assert_eq!(iter.next().unwrap(), Token::Eof);
     }
@@ -452,7 +453,7 @@ mod test {
         assert_eq!(iter.next().unwrap(), Token::Equal);
         assert_eq!(iter.next().unwrap(), Token::Print);
         assert_eq!(iter.next().unwrap(), Token::LeftParen);
-        assert_eq!(iter.next().unwrap(), Token::String("statement"));
+        assert_eq!(iter.next().unwrap(), Token::String("\"statement\""));
         assert_eq!(iter.next().unwrap(), Token::RightParen);
         assert_eq!(iter.next().unwrap(), Token::Semicolon);
         assert_eq!(iter.next().unwrap(), Token::RightBrace);

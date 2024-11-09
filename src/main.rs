@@ -1,18 +1,10 @@
-mod lexer;
-pub(crate) mod tokens;
-mod ast;
-
 use core::panic;
 use std::{
     fs::File,
     io::{self, BufRead, BufReader, Read},
 };
 
-use ast::parse;
 use clap::Parser;
-use lexer::Lexer;
-use tokens::Tokens;
-//use ast::Parser as LoxParser;
 use tracing::{info, Level};
 
 #[derive(Parser, Debug)]
@@ -52,13 +44,7 @@ fn run_file(file: &str) {
 }
 
 fn run(source: &str) {
-    println!("{}", source);
-    let mut lexer = Lexer::new();
-
-    if let Ok(()) = lexer.tokenize(source) {
-        let mut tokens = lexer.get();
-        let _ast = parse(&mut tokens);
-    }
+    loxrs::run(source);
 }
 
 fn setup_logging() {
