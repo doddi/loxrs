@@ -1,112 +1,38 @@
+use tracing::trace;
+
 use crate::lexer::tokens::{ Tokens, Token };
 
 use core::panic;
-use std::fmt::Display;
+
+use super::{Expr, Literal, Operator};
 
 /// This implementation is making use of the Pratt Parser technique
 
-#[derive(Debug)]
-pub(crate) enum Expression<'a> {
-    Literal(Literal<'a>),
-    Unary(Operator, Box<Expression<'a>>),
-    Binary(Box<Expression<'a>>, Operator, Box<Expression<'a>>),
-    Grouping(Box<Expression<'a>>),
+pub(crate) fn parse<'a>(tokens: &mut Tokens<'a>) -> Expr<'a> {
+    parse_expression_binding_power(tokens, 0)
 }
 
-impl <'a>Display for Expression<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let _ = match self {
-            Expression::Literal(literal) => write!(f, "{}", literal),
-            Expression::Unary(op, rhs) => write!(f, "{}{}", op, rhs),
-            Expression::Binary(lhs, op, rhs) => write!(f, "{} {} {}", op, lhs, rhs),
-            Expression::Grouping(expression) => write!(f, "({})", expression),
-        };
-        Ok(())
-    }
-}
 
-#[derive(Debug)]
-pub(crate) enum Literal<'a> {
-    Number(f64),
-    String(&'a str),
-    True,
-    False,
-    Nil,
-}
-
-impl <'a>Display for Literal<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let _ = match self {
-            Literal::Number(val) => write!(f, "{}", val),
-            Literal::String(val) => write!(f, "{}", val),
-            Literal::True => write!(f, "true"),
-            Literal::False => write!(f, "false"),
-            Literal::Nil => write!(f, "nil"),
-        };
-        Ok(())
-    }
-}
-
-#[derive(Debug)]
-pub(crate) enum Operator {
-    EqualTo,
-    NotEqualTo,
-    LessThan,
-    LessEqualThan,
-    GreaterThan,
-    GreaterEqualThan,
-    Plus,
-    Minus,
-    Mult,
-    Divide,
-
-    // TODO: Are these operators?
-    Negate,
-    Not,
-}
-
-impl Display for Operator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let _ = match self {
-            Operator::EqualTo => write!(f, "=="),
-            Operator::NotEqualTo => write!(f, "!="),
-            Operator::LessThan => write!(f, "<"),
-            Operator::LessEqualThan => write!(f, "<="),
-            Operator::GreaterThan => write!(f, ">"),
-            Operator::GreaterEqualThan => write!(f, ">="),
-            Operator::Plus => write!(f, "+"),
-            Operator::Minus => write!(f, "-"),
-            Operator::Mult => write!(f, "*"),
-            Operator::Divide => write!(f, "/"),
-
-            Operator::Negate => write!(f, "-"),
-            Operator::Not => write!(f, "!"),
-        };
-
-        Ok(())
-    }
-}
-
-fn parse_literal<'a>(token: &Token<'a>) -> Expression<'a>
+fn parse_literal<'a>(token: &Token<'a>) -> Expr<'a>
 {
+    trace!("parse_literal: {token:?}");
+
     match token {
-        Token::Number(val) => Expression::Literal(Literal::Number(*val)),
+        Token::Number(val) => Expr::Literal(Literal::Number(*val)),
         Token::String(val) => match *val {
-            "True" => Expression::Literal(Literal::True),
-            "False" => Expression::Literal(Literal::False),
-            "Nil" => Expression::Literal(Literal::Nil),
-            _ => Expression::Literal(Literal::String(val)),
+            "true" => Expr::Literal(Literal::True),
+            "false" => Expr::Literal(Literal::False),
+            "Nil" => Expr::Literal(Literal::Nil),
+            _ => Expr::Literal(Literal::String(val)),
         }
         _ => unreachable!("Unable to parse a literal"),
     }
 }
 
 
-pub(crate) fn parse<'a>(tokens: &mut Tokens<'a>) -> Expression<'a> {
-    parse_expression_binding_power(tokens, 0)
-}
+fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power: u8) -> Expr<'a> {
+    trace!("parse_expr_bp: {min_binding_power}");
 
-fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power: u8) -> Expression<'a> {
     let mut lhs = match tokens.next() {
         Some(token) => match token {
             Token::Number(_) => parse_literal(token),
@@ -115,6 +41,9 @@ fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power
             Token::Minus => parse_unary(tokens, Operator::Negate),
             Token::Bang => parse_unary(tokens, Operator::Not),
             Token::LeftParen => parse_grouping(tokens),
+
+            Token::True => Expr::Literal(Literal::True),
+            Token::False => Expr::Literal(Literal::False),
             t => unreachable!("Should not get here, invalid token: {:?}", t),
         },
         None => panic!("No token found"),
@@ -137,23 +66,29 @@ fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power
 
         let rhs = parse_expression_binding_power(tokens, r_bind_power);
 
-        lhs = Expression::Binary(Box::new(lhs), op, Box::new(rhs));
+        lhs = Expr::Binary(Box::new(lhs), op, Box::new(rhs));
     }
     lhs
 }
 
-fn parse_grouping<'a>(tokens: &mut Tokens<'a>) -> Expression<'a> {
+fn parse_grouping<'a>(tokens: &mut Tokens<'a>) -> Expr<'a> {
+    trace!("parse_grouping");
+
     let expression = parse_expression_binding_power(tokens, 0);
     tokens.consume();
-    Expression::Grouping(Box::new(expression))
+    Expr::Grouping(Box::new(expression))
 }
 
-fn parse_unary<'a>(tokens: &mut Tokens<'a>, op: Operator) -> Expression<'a> {
+fn parse_unary<'a>(tokens: &mut Tokens<'a>, op: Operator) -> Expr<'a> {
+    trace!("parse_unary operator: {op}");
+
     let min_binding_power = prefix_binding_power(&op).1;
-    Expression::Unary(op, Box::new(parse_expression_binding_power(tokens, min_binding_power)))
+    Expr::Unary(op, Box::new(parse_expression_binding_power(tokens, min_binding_power)))
 }
 
 fn parse_operator(token: &Token<'_>) -> Option<Operator> {
+    trace!("parse_operator: {token:?}");
+
     match token {
         Token::Eof => None,
         Token::Plus => Some(Operator::Plus),
@@ -176,6 +111,8 @@ fn parse_operator(token: &Token<'_>) -> Option<Operator> {
 
 
 fn infix_binding_power(op: &Operator) -> (u8, u8) {
+    trace!("infix_bp: {op}");
+    
     match op {
         Operator::EqualTo | Operator::NotEqualTo => (1, 2),
 
@@ -190,6 +127,8 @@ fn infix_binding_power(op: &Operator) -> (u8, u8) {
 
 
 fn prefix_binding_power(op: &Operator) -> ((), u8) {
+    trace!("prefix_bp: {op}");
+
     match op {
         Operator::Negate | Operator::Not => ((), 9),
         _ => panic!("invalid prefix operator: {:?}", op),
