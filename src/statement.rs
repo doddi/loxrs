@@ -1,61 +1,27 @@
-use crate::{lexer::tokens::{Token, Tokens}, parser::{parser::parse, Expr}};
+use crate::{expr::Expr, loxerror::LoxError, object::Object};
 
+#[derive(Debug)]
 pub(crate) enum Statement<'a> {
     Print(Box<Expr<'a>>),
+    If(Box<Expr<'a>>, Box<Self>, Option<Box<Self>>),
+    Expression(Box<Expr<'a>>),
 }
 
-pub(crate) struct Parser<'a> {
-    tokens: Tokens<'a>,
-}
 
-fn matches<'a>(lhs: &Token<'a>, rhs: &Token<'a>) -> bool {
-   lhs == rhs
-}
-
-impl <'a>Parser<'a> {
-    pub(crate) fn new(tokens: Tokens<'a>) -> Self {
-        Self {
-            tokens,
+impl Statement<'_> {
+    pub(crate) fn accept<'v: 's, 's>(&'s self, visitor: &'v mut dyn Visitor) -> Result<Object, LoxError> {
+        match self {
+            Statement::Print(expr) => visitor.visit_print_statement(expr),
+            Statement::If(condition, if_branch, else_branch) => visitor.visit_if_statement(condition, if_branch, else_branch),
+            Statement::Expression(expr) => visitor.visit_expression_statement(expr),
         }
     }
 
-    pub(crate) fn run(&mut self, tokens: Tokens<'a>, statements: Vec<Statement<'a>>) {
-        loop {
-            let token = tokens.peek();
-            match token {
-                Some(lhs) => {
-                    if matches(lhs, &Token::Eof) {
-                        statements.push(self.declaration());
-                    }
-                },
-                None => break,
-            }
-        }
-    }
-
-
-    fn declaration(&'a mut self) -> Statement<'a> {
-        self.statement().expect("expected a declaration")
-    }
-
-    fn statement(&'a mut self) -> Option<Statement<'a>> {
-        match self.tokens.peek().unwrap() {
-            Token::Print => {
-                self.tokens.consume();
-                return Some(self.print_statement())
-            }
-            _ => None,
-        }
-    }
-
-    fn print_statement(&mut self) -> Statement {
-        let value: Expr = self.expression();
-        Statement::Print(Box::new(value))
-    }
-
-    fn expression(&mut self) -> Expr {
-        parse(&mut self.tokens)
-    }
 }
 
+pub(crate) trait Visitor<'a> {
+    fn visit_print_statement(&mut self, expr: &Box<Expr>) -> Result<Object, LoxError>;
+    fn visit_if_statement(&mut self, condition: &Box<Expr>, if_branch: &Box<Statement>, else_branch: &Option<Box<Statement>>) -> Result<Object, LoxError>;
+    fn visit_expression_statement(&mut self, expr: &Box<Expr>) -> Result<Object, LoxError>;
+}
 

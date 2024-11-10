@@ -1,15 +1,22 @@
 use tracing::trace;
 
-use crate::lexer::tokens::{ Tokens, Token };
-
 use core::panic;
 
-use super::{Expr, Literal, Operator};
+use crate::{expr::{Expr, Literal, Operator}, token::{Token, Tokens}};
+
 
 /// This implementation is making use of the Pratt Parser technique
+pub(crate) struct ExprParser {
+}
 
-pub(crate) fn parse<'a>(tokens: &mut Tokens<'a>) -> Expr<'a> {
-    parse_expression_binding_power(tokens, 0)
+impl ExprParser {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn parse<'a>(&self, tokens: &mut Tokens<'a>) -> Expr<'a> {
+        parse_expression_binding_power(tokens, 0)
+    }
 }
 
 
@@ -20,8 +27,8 @@ fn parse_literal<'a>(token: &Token<'a>) -> Expr<'a>
     match token {
         Token::Number(val) => Expr::Literal(Literal::Number(*val)),
         Token::String(val) => match *val {
-            "true" => Expr::Literal(Literal::True),
-            "false" => Expr::Literal(Literal::False),
+            "true" => Expr::Literal(Literal::Bool(true)),
+            "false" => Expr::Literal(Literal::Bool(false)),
             "Nil" => Expr::Literal(Literal::Nil),
             _ => Expr::Literal(Literal::String(val)),
         }
@@ -42,8 +49,8 @@ fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power
             Token::Bang => parse_unary(tokens, Operator::Not),
             Token::LeftParen => parse_grouping(tokens),
 
-            Token::True => Expr::Literal(Literal::True),
-            Token::False => Expr::Literal(Literal::False),
+            Token::True => Expr::Literal(Literal::Bool(true)),
+            Token::False => Expr::Literal(Literal::Bool(false)),
             t => unreachable!("Should not get here, invalid token: {:?}", t),
         },
         None => panic!("No token found"),
@@ -137,14 +144,16 @@ fn prefix_binding_power(op: &Operator) -> ((), u8) {
 
 #[cfg(test)]
 mod test {
-    use crate::lexer::lexer::Lexer;
+
+    use crate::tokenizer::Lexer;
 
     use super::*;
 
     fn lex<'a>(value: &'a str) -> String {
         let mut lexer = Lexer::new();
         let _ = lexer.tokenize(value);
-        parse(&mut lexer.get()).to_string()
+        let expr_parser = ExprParser::new();
+        expr_parser.parse(&mut lexer.get()).to_string()
     }
 
     #[test]

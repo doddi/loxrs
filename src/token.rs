@@ -1,3 +1,6 @@
+use crate::loxerror::LoxError;
+
+
 #[derive(Debug, PartialEq)]
 pub enum Token<'a> {
     LeftParen,
@@ -73,5 +76,18 @@ impl <'a>Tokens<'a> {
 
     pub fn peek(&self) -> Option<&Token<'a>> {
         self.inner.get(self.index)
+    }
+
+    pub fn expect(&self, expected: Token<'a>) -> Result<(), LoxError> {
+        match self.inner.get(self.index) {
+            Some(token) => {
+                if token != &expected {
+                    // TODO: Look to surface token information
+                    return Err(LoxError::InvalidToken { error: "Received unexpected token" });
+                }
+                Ok(())
+            },
+            None => Err(LoxError::UnexpectedEof),
+        }
     }
 }

@@ -1,29 +1,33 @@
-use eval::evaluate;
-use lexer::lexer::Lexer;
-use parser::parser::parse;
+use interpreter::Interpreter;
+use loxerror::LoxError;
+use statement_parser::StatementParser;
+use tokenizer::Lexer;
 
-mod lexer;
-mod parser;
-mod eval;
+mod tokenizer;
+mod expr_parser;
+mod expr;
 mod statement;
+mod token;
+mod loxerror;
+mod interpreter;
+mod object;
+mod statement_parser;
 
 
-pub fn run(source: &str) {
+pub fn run(source: &str) -> Result<(), LoxError> {
     let mut lexer = Lexer::new();
 
     if let Ok(()) = lexer.tokenize(source) {
-        let mut tokens = lexer.get();
-        let expression = parse(&mut tokens);
-        let eval = evaluate(expression);
+        let tokens = lexer.get();
 
-        if let Ok(result) = eval {
-            println!("{:?}", result);
-        }
+        let mut statement_parser = StatementParser::new(tokens);
+        let statements = statement_parser.run()?;
+
+        let interpreter = Interpreter::new();
+        interpreter.run(&statements);
     }
+
+    Ok(())
 }
 
 
-#[derive(Debug)]
-pub enum LoxError {
-    InvalidToken { error: &'static str },
-}

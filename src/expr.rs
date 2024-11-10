@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-pub(crate) mod parser;
+use crate::{loxerror::LoxError, object::Object};
 
 #[derive(Debug)]
 pub(crate) enum Expr<'a> {
@@ -22,12 +22,29 @@ impl <'a>Display for Expr<'a> {
     }
 }
 
+impl <'a>Expr<'a> {
+    pub fn accept<'v: 's, 's, 'l>(&'s self, visitor: &'v mut dyn Visitor<'l>) -> Result<Object<'a>, LoxError> {
+        match self {
+            Expr::Literal(literal) => visitor.visit_literal_expression(literal),
+            Expr::Unary(op, expr) => visitor.visit_unary_expression(op, expr),
+            Expr::Binary(lhs, op, rhs) => visitor.visit_binary_expression(lhs, op, rhs),
+            Expr::Grouping(expr) => visitor.visit_grouping_expression(expr),
+        }
+    }
+}
+
+pub(crate) trait Visitor<'l> {
+    fn visit_binary_expression(&mut self, lhs: &Expr, operator: &Operator, rhs: &Expr) -> Result<Object, LoxError>;
+    fn visit_literal_expression(&mut self, literal: &Literal<'l>) -> Result<Object<'l>, LoxError>;
+    fn visit_unary_expression(&mut self, operator: &Operator, expr: &Expr) -> Result<Object, LoxError>;
+    fn visit_grouping_expression(&mut self, expr: &Expr) -> Result<Object, LoxError>;
+}
+
 #[derive(Debug)]
 pub(crate) enum Literal<'a> {
     Number(f64),
     String(&'a str),
-    True,
-    False,
+    Bool(bool),
     Nil,
 }
 
@@ -36,8 +53,7 @@ impl <'a>Display for Literal<'a> {
         let _ = match self {
             Literal::Number(val) => write!(f, "{}", val),
             Literal::String(val) => write!(f, "{}", val),
-            Literal::True => write!(f, "true"),
-            Literal::False => write!(f, "false"),
+            Literal::Bool(val) => write!(f, "{val}"),
             Literal::Nil => write!(f, "nil"),
         };
         Ok(())

@@ -1,4 +1,4 @@
-use super::tokens::{ Tokens, Token };
+use crate::token::{Token, Tokens};
 
 #[derive(Debug)]
 pub struct Lexer<'a> {
