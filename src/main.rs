@@ -44,7 +44,7 @@ fn run_file(file: &str) {
 }
 
 fn run(source: &str) {
-    loxrs::run(source);
+    let _ = loxrs::run(source);
 }
 
 fn setup_logging() {

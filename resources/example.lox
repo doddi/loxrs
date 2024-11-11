@@ -1,4 +1,1 @@
-{
-    // This is the start
-    var myVar = print("statement");
-}
+print "Hello, World!";

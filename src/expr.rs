@@ -23,21 +23,21 @@ impl <'a>Display for Expr<'a> {
 }
 
 impl <'a>Expr<'a> {
-    pub fn accept<'v: 's, 's, 'l>(&'s self, visitor: &'v mut dyn Visitor<'l>) -> Result<Object<'a>, LoxError> {
+    pub fn accept<'s, 'v: 'a>(&'s self, visitor: &mut dyn Visitor<'v>) -> Result<Object<'a>, LoxError> {
         match self {
             Expr::Literal(literal) => visitor.visit_literal_expression(literal),
             Expr::Unary(op, expr) => visitor.visit_unary_expression(op, expr),
-            Expr::Binary(lhs, op, rhs) => visitor.visit_binary_expression(lhs, op, rhs),
-            Expr::Grouping(expr) => visitor.visit_grouping_expression(expr),
+            Expr::Binary(_lhs, _op, _rhs) => todo!(),
+            Expr::Grouping(_expr) => todo!(),
         }
     }
 }
 
-pub(crate) trait Visitor<'l> {
-    fn visit_binary_expression(&mut self, lhs: &Expr, operator: &Operator, rhs: &Expr) -> Result<Object, LoxError>;
-    fn visit_literal_expression(&mut self, literal: &Literal<'l>) -> Result<Object<'l>, LoxError>;
-    fn visit_unary_expression(&mut self, operator: &Operator, expr: &Expr) -> Result<Object, LoxError>;
-    fn visit_grouping_expression(&mut self, expr: &Expr) -> Result<Object, LoxError>;
+pub(crate) trait Visitor<'v> {
+    //fn visit_binary_expression<'output>(&mut self, lhs: &Expr<'output>, operator: &Operator, rhs: &Expr<'output>) -> Result<Object<'output>, LoxError>;
+    fn visit_literal_expression<'output>(&self, literal: &Literal<'output>) -> Result<Object<'output>, LoxError>;
+    fn visit_unary_expression(&mut self, operator: &Operator, expr: &Expr) -> Result<Object<'v>, LoxError>;
+    //fn visit_grouping_expression(&mut self, expr: &Expr<'output>) -> Result<Object<'output>, LoxError>;
 }
 
 #[derive(Debug)]

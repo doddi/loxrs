@@ -23,8 +23,8 @@ pub fn run(source: &str) -> Result<(), LoxError> {
         let mut statement_parser = StatementParser::new(tokens);
         let statements = statement_parser.run()?;
 
-        let interpreter = Interpreter::new();
-        interpreter.run(&statements);
+        let mut interpreter = Interpreter::new();
+        let _ = interpreter.run(&statements);
     }
 
     Ok(())

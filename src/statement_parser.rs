@@ -109,27 +109,27 @@ impl <'a>StatementParser<'a> {
         Ok(Statement::If(Box::new(condition), Box::new(if_branch), else_branch.map(Box::new)))
     }
 
-    fn matches(&mut self, expect: &Token<'a>) -> bool {
-        match self.tokens.peek() {
-            Some(token) => token == expect,
-            None => false,
-        }
-    }
-
-    fn token_consume_expect(&mut self, expect: &Token<'a>) -> Result<(), LoxError> {
-        match self.tokens.peek() {
-            Some(token) => {
-                if token != expect {
-                    self.tokens.consume();
-                    Ok(())
-                }
-                else {
-                    Err(LoxError::InvalidStatement { error: format!("Expecting `{expect:?}`")})
-                }
-            },
-            None => Err(LoxError::InvalidStatement { error: format!("Expecting `{expect:?}`")})
-        }
-    }
+    //fn matches(&mut self, expect: &Token<'a>) -> bool {
+    //    match self.tokens.peek() {
+    //        Some(token) => token == expect,
+    //        None => false,
+    //    }
+    //}
+    //
+    //fn token_consume_expect(&mut self, expect: &Token<'a>) -> Result<(), LoxError> {
+    //    match self.tokens.peek() {
+    //        Some(token) => {
+    //            if token != expect {
+    //                self.tokens.consume();
+    //                Ok(())
+    //            }
+    //            else {
+    //                Err(LoxError::InvalidStatement { error: format!("Expecting `{expect:?}`")})
+    //            }
+    //        },
+    //        None => Err(LoxError::InvalidStatement { error: format!("Expecting `{expect:?}`")})
+    //    }
+    //}
 }
 
 #[cfg(test)]
