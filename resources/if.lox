@@ -1,0 +1,21 @@
+print "Start";
+
+if (true) {
+    print "Hello";
+}
+
+if (false) {
+    print "World";
+}
+
+if (false) {
+    print("if");
+}
+else if (true) {
+    print("elseif");
+}
+else {
+    print("else");
+}
+
+print "end";

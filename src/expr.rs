@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{loxerror::LoxError, object::Object};
+use crate::loxerror::LoxError;
 
 #[derive(Debug)]
 pub(crate) enum Expr<'a> {
@@ -23,21 +23,21 @@ impl <'a>Display for Expr<'a> {
 }
 
 impl <'a>Expr<'a> {
-    pub fn accept<'s, 'v: 'a>(&'s self, visitor: &mut dyn Visitor<'v>) -> Result<Object<'a>, LoxError> {
+    pub fn accept<R>(&self, visitor: &mut dyn Visitor<R>) -> Result<R, LoxError> {
         match self {
             Expr::Literal(literal) => visitor.visit_literal_expression(literal),
             Expr::Unary(op, expr) => visitor.visit_unary_expression(op, expr),
-            Expr::Binary(_lhs, _op, _rhs) => todo!(),
-            Expr::Grouping(_expr) => todo!(),
+            Expr::Binary(lhs, op, rhs) => visitor.visit_binary_expression(lhs, op, rhs),
+            Expr::Grouping(expr) => visitor.visit_grouping_expression(expr),
         }
     }
 }
 
-pub(crate) trait Visitor<'v> {
-    //fn visit_binary_expression<'output>(&mut self, lhs: &Expr<'output>, operator: &Operator, rhs: &Expr<'output>) -> Result<Object<'output>, LoxError>;
-    fn visit_literal_expression<'output>(&self, literal: &Literal<'output>) -> Result<Object<'output>, LoxError>;
-    fn visit_unary_expression(&mut self, operator: &Operator, expr: &Expr) -> Result<Object<'v>, LoxError>;
-    //fn visit_grouping_expression(&mut self, expr: &Expr<'output>) -> Result<Object<'output>, LoxError>;
+pub(crate) trait Visitor<R> {
+    fn visit_binary_expression(&mut self, lhs: &Expr, operator: &Operator, rhs: &Expr) -> Result<R, LoxError>;
+    fn visit_literal_expression(&self, literal: &Literal) -> Result<R, LoxError>;
+    fn visit_unary_expression(&mut self, operator: &Operator, expr: &Expr) -> Result<R, LoxError>;
+    fn visit_grouping_expression(&mut self, expr: &Expr) -> Result<R, LoxError>;
 }
 
 #[derive(Debug)]

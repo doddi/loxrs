@@ -1,12 +1,12 @@
 #[derive(Debug)]
-pub(crate) enum Object<'a> {
+pub(crate) enum Object {
     Boolean(bool),
     Null,
     Number(f64),
-    String(&'a str),
+    String(String),
 }
 
-impl <'a>ToString for Object<'a> {
+impl ToString for Object {
     fn to_string(&self) -> String {
         match self {
             Object::Boolean(value) => value.to_string(),

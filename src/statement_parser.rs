@@ -39,7 +39,7 @@ impl <'a>StatementParser<'a> {
 
 
     fn parse_declaration(&mut self) -> Result<Statement<'a>, LoxError> {
-        match self.tokens.peek() {
+        let declaration = match self.tokens.peek() {
             Some(token) => match token {
                 Token::Var => todo!(),
                 Token::Fun => todo!(),
@@ -47,15 +47,21 @@ impl <'a>StatementParser<'a> {
                 _ => self.parse_statement(),
             },
             None => Err(LoxError::UnexpectedEof),
-        }
+        };
+        trace!("declarataion: {:?}", declaration);
+        declaration
     }
 
     fn parse_statement(&mut self) -> Result<Statement<'a>, LoxError> {
+        trace!("parse_statement");
         match self.tokens.peek() {
             Some(token) => match token {
                 Token::Print => self.print_statement(),
                 Token::If => self.if_statement(),
-                Token::LeftBrace => todo!(),
+                Token::LeftBrace => {
+                    self.tokens.consume();
+                    return Ok(Statement::Block(self.block()?));
+                }
                 Token::While => todo!(),
                 Token::Return => todo!(),
                 Token::For => todo!(),
@@ -97,6 +103,7 @@ impl <'a>StatementParser<'a> {
         let else_branch = match self.tokens.peek() {
             Some(token) => {
                 if token == &Token::Else {
+                    self.tokens.consume();
                     Some(self.parse_statement()?)
                 }
                 else {
@@ -109,27 +116,20 @@ impl <'a>StatementParser<'a> {
         Ok(Statement::If(Box::new(condition), Box::new(if_branch), else_branch.map(Box::new)))
     }
 
-    //fn matches(&mut self, expect: &Token<'a>) -> bool {
-    //    match self.tokens.peek() {
-    //        Some(token) => token == expect,
-    //        None => false,
-    //    }
-    //}
-    //
-    //fn token_consume_expect(&mut self, expect: &Token<'a>) -> Result<(), LoxError> {
-    //    match self.tokens.peek() {
-    //        Some(token) => {
-    //            if token != expect {
-    //                self.tokens.consume();
-    //                Ok(())
-    //            }
-    //            else {
-    //                Err(LoxError::InvalidStatement { error: format!("Expecting `{expect:?}`")})
-    //            }
-    //        },
-    //        None => Err(LoxError::InvalidStatement { error: format!("Expecting `{expect:?}`")})
-    //    }
-    //}
+    fn block(&mut self) -> Result<Vec<Statement<'a>>, LoxError> {
+        trace!("block entered");
+        let mut statements = Vec::new();
+
+        while !self.tokens.is(Token::RightBrace) {
+            statements.push(self.parse_declaration()?);
+        }
+
+        let _ = self.tokens.expect(Token::RightBrace);
+        self.tokens.consume();
+
+        trace!("block exit, statements: {:?}", statements);
+        Ok(statements)
+    }
 }
 
 #[cfg(test)]

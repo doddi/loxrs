@@ -55,6 +55,7 @@ fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power
         },
         None => panic!("No token found"),
     };
+    trace!("expression lhs: {lhs}");
 
     loop {
         let op = match tokens.peek() {
@@ -75,6 +76,7 @@ fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power
 
         lhs = Expr::Binary(Box::new(lhs), op, Box::new(rhs));
     }
+    trace!("expression parse:{:?}", lhs);
     lhs
 }
 
@@ -94,25 +96,26 @@ fn parse_unary<'a>(tokens: &mut Tokens<'a>, op: Operator) -> Expr<'a> {
 }
 
 fn parse_operator(token: &Token<'_>) -> Option<Operator> {
-    trace!("parse_operator: {token:?}");
 
-    match token {
-        Token::Eof => None,
-        Token::Plus => Some(Operator::Plus),
-        Token::Minus => Some(Operator::Minus),
-        Token::Slash => Some(Operator::Divide),
-        Token::Star => Some(Operator::Mult),
+    let op = match token {
+            Token::Eof => None,
+            Token::Plus => Some(Operator::Plus),
+            Token::Minus => Some(Operator::Minus),
+            Token::Slash => Some(Operator::Divide),
+            Token::Star => Some(Operator::Mult),
 
-        Token::EqualEqual => Some(Operator::EqualTo),
-        Token::BangEqual => Some(Operator::NotEqualTo),
+            Token::EqualEqual => Some(Operator::EqualTo),
+            Token::BangEqual => Some(Operator::NotEqualTo),
 
-        Token::Greater => Some(Operator::GreaterThan),
-        Token::GreaterEqual => Some(Operator::GreaterEqualThan),
-        Token::Less => Some(Operator::LessThan),
-        Token::LessEqual => Some(Operator::LessEqualThan),
+            Token::Greater => Some(Operator::GreaterThan),
+            Token::GreaterEqual => Some(Operator::GreaterEqualThan),
+            Token::Less => Some(Operator::LessThan),
+            Token::LessEqual => Some(Operator::LessEqualThan),
 
-        _t => None,
-    }
+            _t => None,
+        };
+    trace!("parse_operator: {op:?}");
+    op
 }
 
 

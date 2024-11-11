@@ -90,4 +90,11 @@ impl <'a>Tokens<'a> {
             None => Err(LoxError::UnexpectedEof),
         }
     }
+
+    pub(crate) fn is(&self, expect: Token<'a>) -> bool {
+        match self.peek() {
+            Some(token) => token == &expect,
+            None => false,
+        }
+    }
 }

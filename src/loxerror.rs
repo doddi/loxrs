@@ -4,4 +4,5 @@ pub enum LoxError {
     InvalidStatement { error: String },
     UnexpectedEof,
     InterpreterExpression,
+    InterpreterStatement,
 }
