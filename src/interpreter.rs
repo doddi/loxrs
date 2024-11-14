@@ -44,6 +44,12 @@ impl Interpreter {
         }
     }
 
+    pub(crate) fn execute_block(&mut self, statements: &Vec<Statement<'_>>) -> Result<(), LoxError> {
+        Ok(for statement in statements {
+            self.execute(statement)?
+        })
+    }
+
 }
 
 impl expr::Visitor<Object> for Interpreter {
@@ -94,6 +100,21 @@ impl expr::Visitor<Object> for Interpreter {
     fn visit_grouping_expression(&mut self, expr: &Expr) -> Result<Object, LoxError> {
         self.evaluate(expr)
     }
+
+    fn visit_function_expression(&mut self, callee: &Expr, args: &Vec<Expr>) -> Result<Object, LoxError> {
+        let callee = self.evaluate(callee)?;
+
+        let arg_values: Result<Vec<Object>, LoxError> = args
+            .into_iter()
+            .map(|arg| self.evaluate(arg))
+            .collect();
+        let _args = arg_values?;
+
+        match callee {
+            //Object::Callable(function) => function.call(self, &args),
+            _ => return Err(LoxError::InterpreterExpression),
+        }
+    }
 }
 
 impl statement::Visitor<()> for Interpreter {
@@ -124,10 +145,11 @@ impl statement::Visitor<()> for Interpreter {
     }
 
     fn visit_block_statement(&mut self, statements: &Vec<Statement>) -> Result<(), LoxError> {
-        // TODO: Need to look at scoping and creating a new environment
-        for statement in statements {
-            self.execute(statement)?
-        }
+        self.execute_block(statements)?;
         Ok(())
+    }
+
+    fn visit_function_statement(&mut self, _name: crate::token::Token, _args: &Vec<Statement>, _body: &Vec<Statement>) -> Result<(), LoxError> {
+        todo!()
     }
 }

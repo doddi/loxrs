@@ -1,4 +1,4 @@
-use crate::{expr::Expr, loxerror::LoxError};
+use crate::{expr::Expr, loxerror::LoxError, token::Token};
 
 #[derive(Debug)]
 pub(crate) enum Statement<'a> {
@@ -6,6 +6,8 @@ pub(crate) enum Statement<'a> {
     If(Box<Expr<'a>>, Box<Self>, Option<Box<Self>>),
     Expression(Box<Expr<'a>>),
     Block(Vec<Statement<'a>>),
+
+    Function { name: Token<'a>, args: Vec<&'a Token<'a>>, body: Vec<Statement<'a>>},
 }
 
 
@@ -16,6 +18,7 @@ impl Statement<'_> {
             Statement::If(condition, if_branch, else_branch) => visitor.visit_if_statement(condition, if_branch, else_branch),
             Statement::Expression(expr) => visitor.visit_expression_statement(expr),
             Statement::Block(statement) => visitor.visit_block_statement(statement),
+            Statement::Function { name: _name, args: _args, body: _body } => todo!(),
         }
     }
 
@@ -29,5 +32,6 @@ pub(crate) trait Visitor<R> {
         else_branch: &Option<Box<Statement<'output>>>) -> Result<R, LoxError>;
     fn visit_expression_statement<'output>(&mut self, expr: &Box<Expr<'output>>) -> Result<R, LoxError>;
     fn visit_block_statement(&mut self, statements: &Vec<Statement>) -> Result<R, LoxError>;
+    fn visit_function_statement(&mut self, name: Token, args: &Vec<Statement>, body: &Vec<Statement>) -> Result<R, LoxError>;
 }
 

@@ -152,7 +152,7 @@ mod test {
 
     use super::*;
 
-    fn lex<'a>(value: &'a str) -> String {
+    fn expr_parse_test<'a>(value: &'a str) -> String {
         let mut lexer = Lexer::new();
         let _ = lexer.tokenize(value);
         let expr_parser = ExprParser::new();
@@ -161,37 +161,44 @@ mod test {
 
     #[test]
     fn test_add() {
-        assert_eq!(lex("1.1 + 2.1"), "+ 1.1 2.1");
-        assert_eq!(lex("1.1 - 2.1"), "- 1.1 2.1");
-        assert_eq!(lex("1.1 * 2.1"), "* 1.1 2.1");
-        assert_eq!(lex("1.1 / 2.1"), "/ 1.1 2.1");
+        assert_eq!(expr_parse_test("1.1 + 2.1"), "+ 1.1 2.1");
+        assert_eq!(expr_parse_test("1.1 - 2.1"), "- 1.1 2.1");
+        assert_eq!(expr_parse_test("1.1 * 2.1"), "* 1.1 2.1");
+        assert_eq!(expr_parse_test("1.1 / 2.1"), "/ 1.1 2.1");
     }
 
 
     #[test]
     fn test_equality() {
-        assert_eq!(lex("\"Hello\" == \"World\""), "== \"Hello\" \"World\"");
-        assert_eq!(lex("1.1 != 2.1"), "!= 1.1 2.1");
-        assert_eq!(lex("1.1 < 2.1"), "< 1.1 2.1");
-        assert_eq!(lex("1.1 <= 2.1"), "<= 1.1 2.1");
-        assert_eq!(lex("1.1 > 2.1"), "> 1.1 2.1");
-        assert_eq!(lex("1.1 >= 2.1"), ">= 1.1 2.1");
+        assert_eq!(expr_parse_test("\"Hello\" == \"World\""), "== \"Hello\" \"World\"");
+        assert_eq!(expr_parse_test("1.1 != 2.1"), "!= 1.1 2.1");
+        assert_eq!(expr_parse_test("1.1 < 2.1"), "< 1.1 2.1");
+        assert_eq!(expr_parse_test("1.1 <= 2.1"), "<= 1.1 2.1");
+        assert_eq!(expr_parse_test("1.1 > 2.1"), "> 1.1 2.1");
+        assert_eq!(expr_parse_test("1.1 >= 2.1"), ">= 1.1 2.1");
     }
 
 
     #[test]
     fn test_precedence() {
-        assert_eq!(lex("1 + 2 * 3"), "+ 1 * 2 3");
+        assert_eq!(expr_parse_test("1 + 2 * 3"), "+ 1 * 2 3");
     }
 
     #[test]
     fn test_unary() {
-        assert_eq!(lex("-3"), "-3");
-        assert_eq!(lex("!3"), "!3");
+        assert_eq!(expr_parse_test("-3"), "-3");
+        assert_eq!(expr_parse_test("!3"), "!3");
     }
 
     #[test]
     fn test_grouping() {
-        assert_eq!(lex("(1 + 2) * 3"), "* (+ 1 2) 3");
+        assert_eq!(expr_parse_test("(1 + 2) * 3"), "* (+ 1 2) 3");
+    }
+
+    #[test]
+    fn test_function() {
+        let content = include_str!("../resources/function.lox");
+        let parsed = expr_parse_test(content);
+        assert_eq!(parsed, "");
     }
 }

@@ -12,6 +12,7 @@ mod loxerror;
 mod interpreter;
 mod object;
 mod statement_parser;
+mod function;
 
 
 pub fn run(source: &str) -> Result<(), LoxError> {

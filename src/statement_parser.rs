@@ -42,7 +42,7 @@ impl <'a>StatementParser<'a> {
         let declaration = match self.tokens.peek() {
             Some(token) => match token {
                 Token::Var => todo!(),
-                Token::Fun => todo!(),
+                Token::Fun => self.function("function"),
                 Token::Class => todo!(),
                 _ => self.parse_statement(),
             },
@@ -130,6 +130,43 @@ impl <'a>StatementParser<'a> {
         trace!("block exit, statements: {:?}", statements);
         Ok(statements)
     }
+
+    fn function(&mut self, _arg: &'static str) -> Result<Statement<'a>, LoxError> {
+        //let name = if let Some(token) = self.tokens.next() {
+        //    token
+        //}
+        //else {
+        //    return Err(LoxError::InterpreterStatement);
+        //};
+
+        let _ = self.tokens.expect(Token::LeftParen);
+        self.tokens.consume();
+
+        let args: Vec<&Token<'a>> = vec![];
+        //while !self.tokens.is(Token::RightParen) {
+        //    if args.len() > 255 {
+        //        return Err(LoxError::InvalidToken { error: "Too many arguments to function call" })
+        //    }
+        //
+        //    match self.tokens.peek() {
+        //        Some(token) => match token {
+        //            Token::Identifier(val) => args.push(self.tokens.next().expect("should not error")),
+        //            t => trace!("Expected an identifier, found {:?}", t),
+        //        },
+        //        None => return Err(LoxError::UnexpectedEof),
+        //    }
+        //}
+        let _ = self.tokens.expect(Token::RightParen);
+        self.tokens.consume();
+
+        let _ =self.tokens.expect(Token::LeftBrace);
+        self.tokens.consume();
+
+        let body = self.block()?;
+
+        //Ok(Statement::Function { name, args, body })
+        Ok(Statement::Function { name: Token::Nil, args, body })
+    }
 }
 
 #[cfg(test)]
@@ -141,7 +178,7 @@ mod test {
     fn setup<'a>(source: &'a str) -> Vec<Statement<'a>> {
         let mut lexer = Lexer::new();
         let _ = lexer.tokenize(source);
-        let mut parser = StatementParser::new(lexer.get());
+        //let mut parser = StatementParser::new(lexer.get());
         //parser.run()
         todo!()
     }

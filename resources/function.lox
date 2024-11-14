@@ -1,0 +1,10 @@
+print "start";
+
+fun doPrint(first, second) {
+    print "first is: " + first + "and this is second: " + second;
+}
+
+//doPrint("Mark", Dodgson");
+
+print "test";
+

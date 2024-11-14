@@ -1,3 +1,5 @@
+use tracing::trace;
+
 use crate::token::{Token, Tokens};
 
 #[derive(Debug)]
@@ -105,6 +107,7 @@ impl<'a> Lexer<'a> {
 
                     end += 1;
                     let slice = &content[start..=end];
+                    trace!("{:?}", slice);
                     self.tokens.push(Token::String(slice));
 
                 }
