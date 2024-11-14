@@ -1,18 +1,18 @@
 use std::fmt::Display;
 
-use crate::loxerror::LoxError;
+use crate::{loxerror::LoxError, object::Object};
 
 #[derive(Debug)]
-pub(crate) enum Expr<'a> {
-    Literal(Literal<'a>),
-    Unary(Operator, Box<Expr<'a>>),
-    Binary(Box<Expr<'a>>, Operator, Box<Expr<'a>>),
-    Grouping(Box<Expr<'a>>),
+pub(crate) enum Expr<'src> {
+    Literal(Literal<'src>),
+    Unary(Operator, Box<Expr<'src>>),
+    Binary(Box<Expr<'src>>, Operator, Box<Expr<'src>>),
+    Grouping(Box<Expr<'src>>),
 
-    Call { callee: Box<Expr<'a>>, args: Vec<Expr<'a>>},
+    Call { callee: Box<Expr<'src>>, args: Vec<Expr<'src>>},
 }
 
-impl <'a>Display for Expr<'a> {
+impl <'src>Display for Expr<'src> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let _ = match self {
             Expr::Literal(literal) => write!(f, "{}", literal),
@@ -25,8 +25,8 @@ impl <'a>Display for Expr<'a> {
     }
 }
 
-impl <'a>Expr<'a> {
-    pub fn accept<R>(&self, visitor: &mut dyn Visitor<R>) -> Result<R, LoxError> {
+impl <'src>Expr<'src> {
+    pub fn accept<'exp, 'visit>(&'exp self, visitor: &'visit mut dyn Visitor<Output = Object<'exp>>) -> Result<Object<'exp>, LoxError> {
         match self {
             Expr::Literal(literal) => visitor.visit_literal_expression(literal),
             Expr::Unary(op, expr) => visitor.visit_unary_expression(op, expr),
@@ -37,24 +37,26 @@ impl <'a>Expr<'a> {
     }
 }
 
-pub(crate) trait Visitor<R> {
-    fn visit_binary_expression(&mut self, lhs: &Expr, operator: &Operator, rhs: &Expr) -> Result<R, LoxError>;
-    fn visit_literal_expression(&self, literal: &Literal) -> Result<R, LoxError>;
-    fn visit_unary_expression(&mut self, operator: &Operator, expr: &Expr) -> Result<R, LoxError>;
-    fn visit_grouping_expression(&mut self, expr: &Expr) -> Result<R, LoxError>;
+pub(crate) trait Visitor {
+    type Output;
 
-    fn visit_function_expression(&mut self, callee: &Expr, args: &Vec<Expr>) -> Result<R, LoxError>; 
+    fn visit_binary_expression<'s, 'exp,'src>(&'s mut self, lhs: &'exp Expr<'src>, operator: &'exp Operator, rhs: &'exp Expr<'src>) -> Result<Self::Output, LoxError>;
+    fn visit_literal_expression<'s, 'exp, 'src>(&'s self, literal: &'exp Literal<'src>) -> Result<Self::Output, LoxError>;
+    fn visit_unary_expression<'s, 'exp, 'src>(&'s mut self, operator: &'exp Operator, expr: &'exp Expr<'src>) -> Result<Self::Output, LoxError>;
+    fn visit_grouping_expression<'s, 'exp, 'src>(&'s mut self, expr: &'exp Expr<'src>) -> Result<Self::Output, LoxError>;
+
+    fn visit_function_expression<'s, 'exp, 'arg, 'src>(&'s mut self, callee: &'exp Expr<'src>, args: &'exp Vec<Expr<'src>>) -> Result<Self::Output, LoxError>; 
 }
 
 #[derive(Debug)]
-pub(crate) enum Literal<'a> {
+pub(crate) enum Literal<'src> {
     Number(f64),
-    String(&'a str),
+    String(&'src str),
     Bool(bool),
     Nil,
 }
 
-impl <'a>Display for Literal<'a> {
+impl <'src>Display for Literal<'src> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let _ = match self {
             Literal::Number(val) => write!(f, "{}", val),

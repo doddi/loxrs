@@ -3,20 +3,20 @@ use tracing::trace;
 use crate::token::{Token, Tokens};
 
 #[derive(Debug)]
-pub struct Lexer<'a> {
-    tokens: Vec<Token<'a>>,
+pub struct Lexer<'src> {
+    tokens: Vec<Token<'src>>,
 }
 
-impl<'a> Lexer<'a> {
+impl<'src> Lexer<'src> {
     pub fn new() -> Self {
         Self { tokens: Vec::new() }
     }
 
-    pub fn get(self) -> Tokens<'a> {
+    pub fn get(self) -> Tokens<'src> {
         Tokens::new(self.tokens)
     }
 
-    pub fn tokenize(&mut self, content: &'a str) -> Result<(), String> {
+    pub fn tokenize(&mut self, content: &'src str) -> Result<(), String> {
         let mut line_no = 0;
 
         let mut char_iter = content.char_indices().peekable();
@@ -174,9 +174,9 @@ impl<'a> Lexer<'a> {
     }
 }
 
-impl <'a>IntoIterator for Lexer<'a> {
-    type Item = Token<'a>;
-    type IntoIter = <Vec<Token<'a>> as IntoIterator>::IntoIter;
+impl <'src>IntoIterator for Lexer<'src> {
+    type Item = Token<'src>;
+    type IntoIter = <Vec<Token<'src>> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.tokens.into_iter()

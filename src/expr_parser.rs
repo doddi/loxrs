@@ -14,13 +14,13 @@ impl ExprParser {
         Self {}
     }
 
-    pub fn parse<'a>(&self, tokens: &mut Tokens<'a>) -> Expr<'a> {
+    pub fn parse<'src>(&self, tokens: &mut Tokens<'src>) -> Expr<'src> {
         parse_expression_binding_power(tokens, 0)
     }
 }
 
 
-fn parse_literal<'a>(token: &Token<'a>) -> Expr<'a>
+fn parse_literal<'src>(token: &Token<'src>) -> Expr<'src>
 {
     trace!("parse_literal: {token:?}");
 
@@ -37,7 +37,7 @@ fn parse_literal<'a>(token: &Token<'a>) -> Expr<'a>
 }
 
 
-fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power: u8) -> Expr<'a> {
+fn parse_expression_binding_power<'src>(tokens: &mut Tokens<'src>, min_binding_power: u8) -> Expr<'src> {
     trace!("parse_expr_bp: {min_binding_power}");
 
     let mut lhs = match tokens.next() {
@@ -80,7 +80,7 @@ fn parse_expression_binding_power<'a>(tokens: &mut Tokens<'a>, min_binding_power
     lhs
 }
 
-fn parse_grouping<'a>(tokens: &mut Tokens<'a>) -> Expr<'a> {
+fn parse_grouping<'src>(tokens: &mut Tokens<'src>) -> Expr<'src> {
     trace!("parse_grouping");
 
     let expression = parse_expression_binding_power(tokens, 0);
@@ -88,7 +88,7 @@ fn parse_grouping<'a>(tokens: &mut Tokens<'a>) -> Expr<'a> {
     Expr::Grouping(Box::new(expression))
 }
 
-fn parse_unary<'a>(tokens: &mut Tokens<'a>, op: Operator) -> Expr<'a> {
+fn parse_unary<'src>(tokens: &mut Tokens<'src>, op: Operator) -> Expr<'src> {
     trace!("parse_unary operator: {op}");
 
     let min_binding_power = prefix_binding_power(&op).1;
@@ -152,7 +152,7 @@ mod test {
 
     use super::*;
 
-    fn expr_parse_test<'a>(value: &'a str) -> String {
+    fn expr_parse_test<'src>(value: &'src str) -> String {
         let mut lexer = Lexer::new();
         let _ = lexer.tokenize(value);
         let expr_parser = ExprParser::new();

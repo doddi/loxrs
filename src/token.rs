@@ -2,7 +2,7 @@ use crate::loxerror::LoxError;
 
 
 #[derive(Debug, PartialEq)]
-pub enum Token<'a> {
+pub enum Token<'src> {
     LeftParen,
     RightParen,
     LeftBrace,
@@ -24,8 +24,8 @@ pub enum Token<'a> {
     Less,
     LessEqual,
 
-    Identifier(&'a str),
-    String(&'a str),
+    Identifier(&'src str),
+    String(&'src str),
     Number(f64),
 
     And,
@@ -48,14 +48,14 @@ pub enum Token<'a> {
     Eof,
 }
 
-pub struct Tokens<'a> {
-    inner: Vec<Token<'a>>,
+pub struct Tokens<'src> {
+    inner: Vec<Token<'src>>,
     index: usize,
 }
 
-impl <'a>Tokens<'a> {
+impl <'src>Tokens<'src> {
 
-    pub fn new(inner: Vec<Token<'a>>) -> Self {
+    pub fn new(inner: Vec<Token<'src>>) -> Self {
        Self {
             inner, index: 0
         } 
@@ -65,7 +65,7 @@ impl <'a>Tokens<'a> {
         self.next();
     }
 
-    pub fn next(&mut self) -> Option<&Token<'a>> {
+    pub fn next(&mut self) -> Option<&Token<'src>> {
         if self.inner.len() == self.index {
             return None
         }
@@ -74,11 +74,11 @@ impl <'a>Tokens<'a> {
         Some(token)?
     }
 
-    pub fn peek(&self) -> Option<&Token<'a>> {
+    pub fn peek(&self) -> Option<&Token<'src>> {
         self.inner.get(self.index)
     }
 
-    pub fn expect(&self, expected: Token<'a>) -> Result<(), LoxError> {
+    pub fn expect(&self, expected: Token<'src>) -> Result<(), LoxError> {
         match self.inner.get(self.index) {
             Some(token) => {
                 if token != &expected {
@@ -91,7 +91,7 @@ impl <'a>Tokens<'a> {
         }
     }
 
-    pub(crate) fn is(&self, expect: Token<'a>) -> bool {
+    pub(crate) fn is(&self, expect: Token<'src>) -> bool {
         match self.peek() {
             Some(token) => token == &expect,
             None => false,

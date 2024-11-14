@@ -1,16 +1,16 @@
 use crate::{interpreter, loxerror::LoxError, object::Object, statement::Statement, token::Token};
 
 #[derive(Debug)]
-pub(crate) enum Function<'a> {
+pub(crate) enum Function<'src> {
     User {
-        name: Token<'a>,
-        args: Vec<Token<'a>>,
-        body: Vec<Statement<'a>>,
+        name: Token<'src>,
+        args: Vec<Token<'src>>,
+        body: Vec<Statement<'src>>,
     }
 }
 
 
-impl <'a>Function<'a> {
+impl <'src>Function<'src> {
     pub(crate) fn call(&self, interpreter: &mut interpreter::Interpreter, _args: &Vec<Object>) -> Result<Object, LoxError> {
         match self {
             Function::User { 
