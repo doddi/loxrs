@@ -1,50 +1,60 @@
 use tracing::trace;
 
-use crate::{expr::Expr, expr_parser::ExprParser, loxerror::LoxError, statement::Statement, token::{Token, Tokens}};
+use crate::{
+    expr::Expr,
+    expr_parser::ExprParser,
+    loxerror::LoxError,
+    statement::Statement,
+    string_indexer::StringIndexer,
+    token::{Token, TokenStore},
+};
 
-
-pub(crate) struct StatementParser<'a> {
-    tokens: Tokens<'a>,
+pub(crate) struct StatementParser {
     expr_parser: ExprParser,
 }
 
-impl <'a>StatementParser<'a> {
-    pub(crate) fn new(tokens: Tokens<'a>) -> Self {
+impl StatementParser {
+    pub(crate) fn new() -> Self {
         Self {
-            tokens,
             expr_parser: ExprParser::new(),
         }
     }
 
-    pub(crate) fn run(&mut self) -> Result<Vec<Statement<'a>>, LoxError> {
+    pub(crate) fn run(
+        &mut self,
+        token_store: &mut TokenStore,
+        string_indexer: &StringIndexer,
+    ) -> Result<Vec<Statement>, LoxError> {
         let mut statements = vec![];
 
         loop {
-            let token = self.tokens.peek();
+            let token = token_store.peek();
             trace!("{:?}", token);
             match token {
                 Some(lhs) => {
-                    if lhs !=  &Token::Eof {
-                        statements.push(self.parse_declaration()?);
-                    }
-                    else {
+                    if lhs != &Token::Eof {
+                        statements.push(self.parse_declaration(token_store, string_indexer)?);
+                    } else {
                         break;
                     }
-                },
+                }
                 None => break,
             }
         }
         Ok(statements)
     }
 
-
-    fn parse_declaration(&mut self) -> Result<Statement<'a>, LoxError> {
-        let declaration = match self.tokens.peek() {
+    fn parse_declaration(
+        &mut self,
+        token_store: &mut TokenStore,
+        string_indexer: &StringIndexer,
+    ) -> Result<Statement, LoxError> {
+        let declaration = match token_store.peek() {
             Some(token) => match token {
                 Token::Var => todo!(),
-                Token::Fun => self.function("function"),
+                Token::Fun => self.function(token_store, string_indexer, "function"),
                 Token::Class => todo!(),
-                _ => self.parse_statement(),
+                _ => self.parse_statement(token_store, string_indexer),
             },
             None => Err(LoxError::UnexpectedEof),
         };
@@ -52,120 +62,144 @@ impl <'a>StatementParser<'a> {
         declaration
     }
 
-    fn parse_statement(&mut self) -> Result<Statement<'a>, LoxError> {
+    fn parse_statement(
+        &mut self,
+        token_store: &mut TokenStore,
+        string_indexer: &StringIndexer,
+    ) -> Result<Statement, LoxError> {
         trace!("parse_statement");
-        match self.tokens.peek() {
+        match token_store.peek() {
             Some(token) => match token {
-                Token::Print => self.print_statement(),
-                Token::If => self.if_statement(),
+                Token::Print => self.print_statement(token_store, string_indexer),
+                Token::If => self.if_statement(token_store, string_indexer),
                 Token::LeftBrace => {
-                    self.tokens.consume();
-                    return Ok(Statement::Block(self.block()?));
+                    token_store.consume();
+                    return Ok(Statement::Block(self.block(token_store, string_indexer)?));
                 }
                 Token::While => todo!(),
                 Token::Return => todo!(),
                 Token::For => todo!(),
-                _ => self.parse_expression_statement(),
-            }
+                _ => self.parse_expression_statement(token_store, string_indexer),
+            },
             None => Err(LoxError::UnexpectedEof),
         }
     }
 
-    fn parse_expression_statement(&mut self) -> Result<Statement<'a>, LoxError> {
-        let expr = self.expr_parser.parse(&mut self.tokens);
+    fn parse_expression_statement(
+        &mut self,
+        token_store: &mut TokenStore,
+        string_indexer: &StringIndexer,
+    ) -> Result<Statement, LoxError> {
+        let expr = self.expr_parser.parse(token_store, string_indexer);
         Ok(Statement::Expression(Box::new(expr)))
     }
 
-    fn print_statement(&mut self) -> Result<Statement<'a>, LoxError> {
-        self.tokens.expect(Token::Print)?;
-        self.tokens.consume();
+    fn print_statement(
+        &mut self,
+        token_store: &mut TokenStore,
+        string_indexer: &StringIndexer,
+    ) -> Result<Statement, LoxError> {
+        token_store.expect(Token::Print)?;
+        token_store.consume();
 
-        let value: Expr = self.expr_parser.parse(&mut self.tokens);
+        let value: Expr = self.expr_parser.parse(token_store, string_indexer);
 
-        self.tokens.expect(Token::Semicolon)?;
-        self.tokens.consume();
+        token_store.expect(Token::Semicolon)?;
+        token_store.consume();
 
         Ok(Statement::Print(Box::new(value)))
     }
 
-    fn if_statement(&mut self) -> Result<Statement<'a>, LoxError> {
-        self.tokens.expect(Token::If)?;
-        self.tokens.consume();
-        self.tokens.expect(Token::LeftParen)?;
-        self.tokens.consume();
+    fn if_statement(
+        &mut self,
+        token_store: &mut TokenStore,
+        string_indexer: &StringIndexer,
+    ) -> Result<Statement, LoxError> {
+        token_store.expect(Token::If)?;
+        token_store.consume();
+        token_store.expect(Token::LeftParen)?;
+        token_store.consume();
 
-        let condition = self.expr_parser.parse(&mut self.tokens);
+        let condition = self.expr_parser.parse(token_store, string_indexer);
 
-        self.tokens.expect(Token::RightParen)?;
-        self.tokens.consume();
+        token_store.expect(Token::RightParen)?;
+        token_store.consume();
 
-        let if_branch = self.parse_statement()?;
-        let else_branch = match self.tokens.peek() {
+        let if_branch = self.parse_statement(token_store, string_indexer)?;
+        let else_branch = match token_store.peek() {
             Some(token) => {
                 if token == &Token::Else {
-                    self.tokens.consume();
-                    Some(self.parse_statement()?)
-                }
-                else {
+                    token_store.consume();
+                    Some(self.parse_statement(token_store, string_indexer)?)
+                } else {
                     None
                 }
-            },
+            }
             None => None,
         };
 
-        Ok(Statement::If(Box::new(condition), Box::new(if_branch), else_branch.map(Box::new)))
+        Ok(Statement::If(
+            Box::new(condition),
+            Box::new(if_branch),
+            else_branch.map(Box::new),
+        ))
     }
 
-    fn block(&mut self) -> Result<Vec<Statement<'a>>, LoxError> {
+    fn block(
+        &mut self,
+        token_store: &mut TokenStore,
+        string_indexer: &StringIndexer,
+    ) -> Result<Vec<Statement>, LoxError> {
         trace!("block entered");
         let mut statements = Vec::new();
 
-        while !self.tokens.is(Token::RightBrace) {
-            statements.push(self.parse_declaration()?);
+        while !token_store.is(Token::RightBrace) {
+            statements.push(self.parse_declaration(token_store, string_indexer)?);
         }
 
-        let _ = self.tokens.expect(Token::RightBrace);
-        self.tokens.consume();
+        let _ = token_store.expect(Token::RightBrace);
+        token_store.consume();
 
         trace!("block exit, statements: {:?}", statements);
         Ok(statements)
     }
 
-    fn function(&mut self, _arg: &'static str) -> Result<Statement<'a>, LoxError> {
-        //let name = if let Some(token) = self.tokens.next() {
-        //    token
-        //}
-        //else {
-        //    return Err(LoxError::InterpreterStatement);
-        //};
+    fn function(
+        &mut self,
+        token_store: &mut TokenStore,
+        string_indexer: &StringIndexer,
+        _arg: &'static str,
+    ) -> Result<Statement, LoxError> {
+        let name = token_store.next().expect("Expected a name token").clone();
 
-        let _ = self.tokens.expect(Token::LeftParen);
-        self.tokens.consume();
+        let _ = token_store.expect(Token::LeftParen);
+        token_store.consume();
 
-        let args: Vec<&Token<'a>> = vec![];
-        //while !self.tokens.is(Token::RightParen) {
-        //    if args.len() > 255 {
-        //        return Err(LoxError::InvalidToken { error: "Too many arguments to function call" })
-        //    }
-        //
-        //    match self.tokens.peek() {
-        //        Some(token) => match token {
-        //            Token::Identifier(val) => args.push(self.tokens.next().expect("should not error")),
-        //            t => trace!("Expected an identifier, found {:?}", t),
-        //        },
-        //        None => return Err(LoxError::UnexpectedEof),
-        //    }
-        //}
-        let _ = self.tokens.expect(Token::RightParen);
-        self.tokens.consume();
+        let mut args: Vec<Token> = vec![];
+        while !token_store.is(Token::RightParen) {
+            if args.len() > 255 {
+                return Err(LoxError::InvalidToken {
+                    error: "Too many arguments to function call",
+                });
+            }
 
-        let _ =self.tokens.expect(Token::LeftBrace);
-        self.tokens.consume();
+            match token_store.next() {
+                Some(token) => match token {
+                    Token::Identifier(_) => args.push(token.clone()),
+                    t => trace!("Expected an identifier, found {:?}", t),
+                },
+                None => return Err(LoxError::UnexpectedEof),
+            }
+        }
+        let _ = token_store.expect(Token::RightParen);
+        token_store.consume();
 
-        let body = self.block()?;
+        let _ = token_store.expect(Token::LeftBrace);
+        token_store.consume();
 
-        //Ok(Statement::Function { name, args, body })
-        Ok(Statement::Function { name: Token::Nil, args, body })
+        let body = self.block(token_store, string_indexer)?;
+
+        Ok(Statement::Function { name, args, body })
     }
 }
 
@@ -175,9 +209,10 @@ mod test {
 
     use super::*;
 
-    fn setup<'a>(source: &'a str) -> Vec<Statement<'a>> {
+    fn setup(source: &str) -> Vec<Statement> {
         let mut lexer = Lexer::new();
-        let _ = lexer.tokenize(source);
+        let mut string_indexer = StringIndexer::new(source);
+        let _ = lexer.tokenize(&mut string_indexer, source);
         //let mut parser = StatementParser::new(lexer.get());
         //parser.run()
         todo!()

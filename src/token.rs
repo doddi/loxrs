@@ -1,8 +1,7 @@
-use crate::loxerror::LoxError;
+use crate::{loxerror::LoxError, string_indexer::StringId};
 
-
-#[derive(Debug, PartialEq)]
-pub enum Token<'a> {
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum Token {
     LeftParen,
     RightParen,
     LeftBrace,
@@ -24,8 +23,8 @@ pub enum Token<'a> {
     Less,
     LessEqual,
 
-    Identifier(&'a str),
-    String(&'a str),
+    Identifier(StringId),
+    String(StringId),
     Number(f64),
 
     And,
@@ -48,50 +47,49 @@ pub enum Token<'a> {
     Eof,
 }
 
-pub struct Tokens<'a> {
-    inner: Vec<Token<'a>>,
+pub(crate) struct TokenStore {
+    inner: Vec<Token>,
     index: usize,
 }
 
-impl <'a>Tokens<'a> {
-
-    pub fn new(inner: Vec<Token<'a>>) -> Self {
-       Self {
-            inner, index: 0
-        } 
+impl TokenStore {
+    pub fn new(inner: Vec<Token>) -> Self {
+        Self { inner, index: 0 }
     }
 
     pub fn consume(&mut self) {
         self.next();
     }
 
-    pub fn next(&mut self) -> Option<&Token<'a>> {
+    pub fn next(&mut self) -> Option<&Token> {
         if self.inner.len() == self.index {
-            return None
+            return None;
         }
         let token = self.inner.get(self.index);
         self.index += 1;
         Some(token)?
     }
 
-    pub fn peek(&self) -> Option<&Token<'a>> {
+    pub fn peek(&self) -> Option<&Token> {
         self.inner.get(self.index)
     }
 
-    pub fn expect(&self, expected: Token<'a>) -> Result<(), LoxError> {
+    pub fn expect(&self, expected: Token) -> Result<(), LoxError> {
         match self.inner.get(self.index) {
             Some(token) => {
                 if token != &expected {
                     // TODO: Look to surface token information
-                    return Err(LoxError::InvalidToken { error: "Received unexpected token" });
+                    return Err(LoxError::InvalidToken {
+                        error: "Received unexpected token",
+                    });
                 }
                 Ok(())
-            },
+            }
             None => Err(LoxError::UnexpectedEof),
         }
     }
 
-    pub(crate) fn is(&self, expect: Token<'a>) -> bool {
+    pub(crate) fn is(&self, expect: Token) -> bool {
         match self.peek() {
             Some(token) => token == &expect,
             None => false,

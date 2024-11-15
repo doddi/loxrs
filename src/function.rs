@@ -1,23 +1,31 @@
-use crate::{interpreter, loxerror::LoxError, object::Object, statement::Statement, token::Token};
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{environment::Environment, interpreter, loxerror::LoxError, object::Object, statement::Statement, token::Token};
 
 #[derive(Debug)]
-pub(crate) enum Function<'a> {
+pub(crate) enum Function {
     User {
-        name: Token<'a>,
-        args: Vec<Token<'a>>,
-        body: Vec<Statement<'a>>,
-    }
+        name: Token,
+        args: Vec<Token>,
+        body: Vec<Statement>,
+        parent: Rc<RefCell<Environment>>,
+    },
 }
 
-
-impl <'a>Function<'a> {
-    pub(crate) fn call(&self, interpreter: &mut interpreter::Interpreter, _args: &Vec<Object>) -> Result<Object, LoxError> {
+impl Function {
+    pub(crate) fn call(
+        &self,
+        interpreter: &mut interpreter::Interpreter,
+        _args: &Vec<Object>,
+    ) -> Result<Object, LoxError> {
         match self {
-            Function::User { 
-                name: _name, 
-                args: _args, 
-                body } => {
-
+            Function::User {
+                name: _name,
+                args: _args,
+                body,
+                parent: parent,
+            } => {
+                let env = Rc::new(RefCell::new());
                 match interpreter.execute_block(body) {
                     Ok(_) => Ok(Object::Null),
                     Err(err) => Err(err),

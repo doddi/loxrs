@@ -1,6 +1,5 @@
 use crate::function::Function;
 
-
 #[derive(Debug)]
 pub(crate) enum Object {
     Boolean(bool),
@@ -11,7 +10,7 @@ pub(crate) enum Object {
     Callable(Function),
 }
 
-impl <'a>ToString for Object {
+impl<'a> ToString for Object {
     fn to_string(&self) -> String {
         match self {
             Object::Boolean(value) => value.to_string(),

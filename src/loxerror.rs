@@ -5,4 +5,5 @@ pub enum LoxError {
     UnexpectedEof,
     InterpreterExpression,
     InterpreterStatement,
+    StringIndexOutOfBouds,
 }

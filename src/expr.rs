@@ -3,16 +3,16 @@ use std::fmt::Display;
 use crate::loxerror::LoxError;
 
 #[derive(Debug)]
-pub(crate) enum Expr<'a> {
-    Literal(Literal<'a>),
-    Unary(Operator, Box<Expr<'a>>),
-    Binary(Box<Expr<'a>>, Operator, Box<Expr<'a>>),
-    Grouping(Box<Expr<'a>>),
+pub(crate) enum Expr {
+    Literal(Literal),
+    Unary(Operator, Box<Expr>),
+    Binary(Box<Expr>, Operator, Box<Expr>),
+    Grouping(Box<Expr>),
 
-    Call { callee: Box<Expr<'a>>, args: Vec<Expr<'a>>},
+    Call { callee: Box<Expr>, args: Vec<Expr> },
 }
 
-impl <'a>Display for Expr<'a> {
+impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let _ = match self {
             Expr::Literal(literal) => write!(f, "{}", literal),
@@ -25,7 +25,7 @@ impl <'a>Display for Expr<'a> {
     }
 }
 
-impl <'a>Expr<'a> {
+impl Expr {
     pub fn accept<R>(&self, visitor: &mut dyn Visitor<R>) -> Result<R, LoxError> {
         match self {
             Expr::Literal(literal) => visitor.visit_literal_expression(literal),
@@ -38,23 +38,29 @@ impl <'a>Expr<'a> {
 }
 
 pub(crate) trait Visitor<R> {
-    fn visit_binary_expression(&mut self, lhs: &Expr, operator: &Operator, rhs: &Expr) -> Result<R, LoxError>;
+    fn visit_binary_expression(
+        &mut self,
+        lhs: &Expr,
+        operator: &Operator,
+        rhs: &Expr,
+    ) -> Result<R, LoxError>;
     fn visit_literal_expression(&self, literal: &Literal) -> Result<R, LoxError>;
     fn visit_unary_expression(&mut self, operator: &Operator, expr: &Expr) -> Result<R, LoxError>;
     fn visit_grouping_expression(&mut self, expr: &Expr) -> Result<R, LoxError>;
 
-    fn visit_function_expression(&mut self, callee: &Expr, args: &Vec<Expr>) -> Result<R, LoxError>; 
+    fn visit_function_expression(&mut self, callee: &Expr, args: &Vec<Expr>)
+        -> Result<R, LoxError>;
 }
 
 #[derive(Debug)]
-pub(crate) enum Literal<'a> {
+pub(crate) enum Literal {
     Number(f64),
-    String(&'a str),
+    String(String),
     Bool(bool),
     Nil,
 }
 
-impl <'a>Display for Literal<'a> {
+impl Display for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let _ = match self {
             Literal::Number(val) => write!(f, "{}", val),

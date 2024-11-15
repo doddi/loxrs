@@ -1,29 +1,31 @@
-use crate::{expr::{self, Expr, Literal}, loxerror::LoxError, object::Object, statement::{self, Statement}};
+use crate::{
+    expr::{self, Expr, Literal},
+    loxerror::LoxError,
+    object::Object,
+    statement::{self, Statement}, token::Token,
+};
 
-
-pub(crate) struct Interpreter {
-}
+pub(crate) struct Interpreter {}
 
 impl Interpreter {
     pub fn new() -> Self {
         Self {}
     }
 
-    pub fn run(&mut self, statements: &Vec<Statement<'_>>) -> Result<(), LoxError> {
+    pub fn run(&mut self, statements: &Vec<Statement>) -> Result<(), LoxError> {
         for statement in statements {
             self.execute(statement)?;
         }
         Ok(())
     }
 
-    fn execute(&mut self, statement: &Statement<'_>) -> Result<(), LoxError> {
+    fn execute(&mut self, statement: &Statement) -> Result<(), LoxError> {
         statement.accept(self)
     }
 
-    fn evaluate<'a>(&mut self, expr: &Expr<'a>) -> Result<Object, LoxError> {
-       expr.accept(self) 
+    fn evaluate<'a>(&mut self, expr: &Expr) -> Result<Object, LoxError> {
+        expr.accept(self)
     }
-
 
     // ------------------------------------------------
     // Binary Operations
@@ -44,18 +46,22 @@ impl Interpreter {
         }
     }
 
-    pub(crate) fn execute_block(&mut self, statements: &Vec<Statement<'_>>) -> Result<(), LoxError> {
+    pub(crate) fn execute_block(&mut self, statements: &Vec<Statement>) -> Result<(), LoxError> {
         Ok(for statement in statements {
             self.execute(statement)?
         })
     }
-
 }
 
 impl expr::Visitor<Object> for Interpreter {
-    fn visit_binary_expression(&mut self, lhs: &Expr, operator: &expr::Operator, rhs: &Expr) -> Result<Object, LoxError> {
-        let lhs = self.evaluate(lhs)?; 
-        let rhs = self.evaluate(rhs)?; 
+    fn visit_binary_expression(
+        &mut self,
+        lhs: &Expr,
+        operator: &expr::Operator,
+        rhs: &Expr,
+    ) -> Result<Object, LoxError> {
+        let lhs = self.evaluate(lhs)?;
+        let rhs = self.evaluate(rhs)?;
 
         match operator {
             expr::Operator::EqualTo => todo!(),
@@ -82,7 +88,11 @@ impl expr::Visitor<Object> for Interpreter {
         }
     }
 
-    fn visit_unary_expression(&mut self, operator: &expr::Operator, expr: &Expr) -> Result<Object, LoxError> {
+    fn visit_unary_expression(
+        &mut self,
+        operator: &expr::Operator,
+        expr: &Expr,
+    ) -> Result<Object, LoxError> {
         let result = self.evaluate(expr)?;
         match operator {
             expr::Operator::Negate => match result {
@@ -101,45 +111,48 @@ impl expr::Visitor<Object> for Interpreter {
         self.evaluate(expr)
     }
 
-    fn visit_function_expression(&mut self, callee: &Expr, args: &Vec<Expr>) -> Result<Object, LoxError> {
+    fn visit_function_expression(
+        &mut self,
+        callee: &Expr,
+        args: &Vec<Expr>,
+    ) -> Result<Object, LoxError> {
         let callee = self.evaluate(callee)?;
 
-        let arg_values: Result<Vec<Object>, LoxError> = args
-            .into_iter()
-            .map(|arg| self.evaluate(arg))
-            .collect();
-        let _args = arg_values?;
+        let arg_values: Result<Vec<Object>, LoxError> =
+            args.into_iter().map(|arg| self.evaluate(arg)).collect();
+        let evaluated_args = arg_values?;
 
         match callee {
-            //Object::Callable(function) => function.call(self, &args),
+            Object::Callable(function) => function.call(self, &evaluated_args),
             _ => return Err(LoxError::InterpreterExpression),
         }
     }
 }
 
 impl statement::Visitor<()> for Interpreter {
-    fn visit_print_statement<'output>(&mut self, expr: &Box<Expr<'output>>) -> Result<(), LoxError> {
+    fn visit_print_statement<'output>(&mut self, expr: &Box<Expr>) -> Result<(), LoxError> {
         let result = self.evaluate(expr)?;
         println!("{}", result.to_string());
         Ok(())
     }
 
-    fn visit_if_statement<'con, 'output>(&mut self, 
-        condition: &Box<Expr<'con>>,
-        if_branch: &Box<Statement<'output>>, 
-        else_branch: &Option<Box<Statement<'output>>>) -> Result<(), LoxError> {
+    fn visit_if_statement<'con, 'output>(
+        &mut self,
+        condition: &Box<Expr>,
+        if_branch: &Box<Statement>,
+        else_branch: &Option<Box<Statement>>,
+    ) -> Result<(), LoxError> {
         let condition = self.evaluate(condition)?;
         if self.truthy(&condition) {
             return self.execute(if_branch);
-        }
-        else if let Some(other) = else_branch {
+        } else if let Some(other) = else_branch {
             self.execute(other)?;
         }
 
         Ok(())
     }
 
-    fn visit_expression_statement<'output>(&mut self, expr: &Box<Expr<'output>>) -> Result<(), LoxError> {
+    fn visit_expression_statement<'output>(&mut self, expr: &Box<Expr>) -> Result<(), LoxError> {
         self.evaluate(expr)?;
         Ok(())
     }
@@ -149,7 +162,20 @@ impl statement::Visitor<()> for Interpreter {
         Ok(())
     }
 
-    fn visit_function_statement(&mut self, _name: crate::token::Token, _args: &Vec<Statement>, _body: &Vec<Statement>) -> Result<(), LoxError> {
-        todo!()
+    fn visit_function_statement(
+        &mut self,
+        name: &Token,
+        args: &Vec<Token>,
+        body: &Vec<Statement>,
+    ) -> Result<(), LoxError> {
+        Ok(())
+    }
+
+    fn visit_var_statement(
+        &mut self, 
+        name: &Token, 
+        initializer: &Option<Expr>
+    ) -> Result<(), LoxError> {
+        Ok(())
     }
 }
