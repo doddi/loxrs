@@ -16,6 +16,7 @@ mod string_indexer;
 mod token;
 mod tokenizer;
 mod environment;
+mod clox;
 
 pub fn run(source: &str) -> Result<(), LoxError> {
     let mut lexer = Lexer::new();

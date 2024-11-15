@@ -25,11 +25,12 @@ impl Function {
                 body,
                 parent: parent,
             } => {
-                let env = Rc::new(RefCell::new());
-                match interpreter.execute_block(body) {
-                    Ok(_) => Ok(Object::Null),
-                    Err(err) => Err(err),
-                }
+                //let env = Rc::new(RefCell::new());
+                //match interpreter.execute_block(body) {
+                //    Ok(_) => Ok(Object::Null),
+                //    Err(err) => Err(err),
+                //}
+                todo!()
             },
         }
     }

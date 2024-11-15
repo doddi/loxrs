@@ -12,7 +12,7 @@ pub(crate) enum Statement {
         args: Vec<Token>,
         body: Vec<Statement>,
     },
-    Var { name: Token, initializer: &Option<Expr> },
+    Var { name: Token, initializer: Option<Expr> },
 }
 
 impl Statement {
