@@ -5,6 +5,7 @@ use std::{
 };
 
 use clap::Parser;
+use loxrs::{clox, jlox};
 use tracing::{info, Level};
 
 #[derive(Parser, Debug)]
@@ -44,7 +45,8 @@ fn run_file(file: &str) {
 }
 
 fn run(source: &str) {
-    let _ = loxrs::run(source);
+    //let _ = jlox::run(source);
+    let _ = clox::run(source);
 }
 
 fn setup_logging() {
