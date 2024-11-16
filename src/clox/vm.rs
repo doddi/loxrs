@@ -1,10 +1,4 @@
-use super::{chunk::Chunk, opcode::Opcode, stack::Stack, CloxValue};
-
-pub(super) enum VmError {
-    CompileError,
-    RuntimeError,
-    StackUnderflow,
-}
+use super::{chunk::Chunk, clox_error::CloxError, compiler::Compiler, opcode::Opcode, scanner::Scanner, stack::Stack, string_indexer::StringIndexer, CloxValue};
 
 pub(super) struct Vm {
     ip: usize,
@@ -19,11 +13,12 @@ impl Vm {
         }
     }
 
-    pub(super) fn interpret(&mut self, chunk: &Chunk) -> Result<(), VmError> {
-        self.run(chunk)
+    pub(super) fn interpret(&mut self, content: &str) -> Result<(), CloxError> {
+        self.compile(content)
+        //self.run(chunk)
     }
 
-    fn run(&mut self, chunk: &Chunk) -> Result<(), VmError> {
+    fn run(&mut self, chunk: &Chunk) -> Result<(), CloxError> {
         loop {
             match chunk.get_at(self.ip) {
                 Some(opcode) => match opcode {
@@ -42,18 +37,28 @@ impl Vm {
                     Opcode::Mul => self.binary_op(|a, b| a * b)?,
                     Opcode::Div => self.binary_op(|a, b| a / b)?,
                 },
-                None => return Err(VmError::RuntimeError),
+                None => return Err(CloxError::RuntimeError),
             }
 
             self.ip += 1;
         }
     }
 
-    fn binary_op<F>(&mut self, op: F) -> Result<(), VmError> 
+    fn binary_op<F>(&mut self, op: F) -> Result<(), CloxError> 
     where F: FnOnce(CloxValue, CloxValue) -> CloxValue {
         let a = self.stack.pop()?;
         let b = self.stack.pop()?;
         self.stack.push(op(a, b));
+        Ok(())
+    }
+
+    fn compile(&self, content: &str) -> Result<(), CloxError> {
+        let mut indexer = StringIndexer::new(content);
+        let scanner = Scanner::new(content, &mut indexer);
+        let compiler = Compiler::new();
+
+        compiler.compile(&scanner)?;
+
         Ok(())
     }
 }

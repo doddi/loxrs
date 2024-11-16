@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::{vm::VmError, CloxValue};
+use super::{clox_error::CloxError, CloxValue};
 
 pub(super) struct Stack {
     inner: Vec<CloxValue>,
@@ -17,10 +17,10 @@ impl Stack {
         self.inner.push(value);
     }
 
-    pub(super) fn pop(&mut self) ->Result<CloxValue, VmError> {
+    pub(super) fn pop(&mut self) ->Result<CloxValue, CloxError> {
         match self.inner.pop() {
             Some(value) => Ok(value),
-            None => Err(VmError::StackUnderflow),
+            None => Err(CloxError::StackUnderflow),
         }
     }
 }
