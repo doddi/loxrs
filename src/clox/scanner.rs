@@ -1,40 +1,47 @@
-use super::{clox_error::CloxError, string_indexer::StringIndexer, token::{Token, TokenType}};
+use tracing::trace;
 
-pub(super) struct Scanner<'src, 'idx> {
+use super::{
+    clox_error::CloxError,
+    string_indexer::StringIndexer,
+    token::{Token, TokenType},
+};
+
+pub(super) struct Scanner<'src> {
     content: &'src str,
     start: usize,
     current: usize,
     line: usize,
 
-    string_indexer: &'idx mut StringIndexer<'src>,
+    string_indexer: StringIndexer<'src>,
 }
 
-impl <'src, 'idx>Scanner<'src, 'idx> {
-    pub(super) fn new(content: &'src str, string_indexer: &'idx mut StringIndexer<'src>) -> Self
-        where 'src: 'idx {
+impl<'src> Scanner<'src> {
+    pub(super) fn new(content: &'src str) -> Self {
         Self {
             content,
             start: 0,
             current: 0,
             line: 0,
 
-            string_indexer,
+            string_indexer: StringIndexer::new(content),
         }
     }
 
     pub(super) fn scan_token(&mut self) -> Result<Token, CloxError> {
+        trace!("scan_token");
         self.skip_whitespace();
+        trace!("skip");
         self.start = self.current;
 
         if self.is_at_end() {
+            trace!("end of file");
             return Ok(self.make_token(TokenType::Eof));
         }
 
-        
         let c = self.advance();
         println!("scan_token: {}, start: {}", c, self.start);
-        
-        match c {    
+
+        match c {
             '(' => Ok(self.make_token(TokenType::LeftParen)),
             ')' => Ok(self.make_token(TokenType::RightParen)),
             '{' => Ok(self.make_token(TokenType::LeftBrace)),
@@ -53,7 +60,7 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
                     self.make_token(TokenType::BangEqual)
                 };
                 Ok(result)
-            },
+            }
             '=' => {
                 let result = if self.matches('=') {
                     self.make_token(TokenType::Equal)
@@ -61,7 +68,7 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
                     self.make_token(TokenType::EqualEqual)
                 };
                 Ok(result)
-            },
+            }
             '<' => {
                 let result = if self.matches('=') {
                     self.make_token(TokenType::Less)
@@ -69,7 +76,7 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
                     self.make_token(TokenType::LessEqual)
                 };
                 Ok(result)
-            },
+            }
             '>' => {
                 let result = if self.matches('=') {
                     self.make_token(TokenType::Greater)
@@ -77,12 +84,11 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
                     self.make_token(TokenType::GreaterEqual)
                 };
                 Ok(result)
-            },
+            }
             '"' => self.string(),
             '0'..='9' => self.number(),
             'a'..='z' | 'A'..='Z' | '_' => self.identifier(),
             _ => Err(CloxError::UnexpectedToken),
-            
         }
     }
 
@@ -94,16 +100,15 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
             'f' => {
                 if self.current - self.start > 1 {
                     match self.get_start_offset_char(1) {
-                        'a' => self.check_keyword(2, 3, "lse",TokenType::False),
-                        'o' => self.check_keyword(2, 1, "r",TokenType::For),
-                        'u' => self.check_keyword(2, 1, "n",TokenType::Fun),
+                        'a' => self.check_keyword(2, 3, "lse", TokenType::False),
+                        'o' => self.check_keyword(2, 1, "r", TokenType::For),
+                        'u' => self.check_keyword(2, 1, "n", TokenType::Fun),
                         _ => Ok(TokenType::Identifier),
                     }
-                }
-                else {
+                } else {
                     Ok(TokenType::Identifier)
                 }
-            },
+            }
             'i' => self.check_keyword(1, 1, "f", TokenType::If),
             'n' => self.check_keyword(1, 2, "il", TokenType::Nil),
             'o' => self.check_keyword(1, 1, "r", TokenType::Or),
@@ -114,13 +119,11 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
                 if self.current - self.start > 1 {
                     println!("{}", self.get_start_offset_char(1));
                     match self.get_start_offset_char(1) {
-                        'h' => self.check_keyword(2, 2, "is",TokenType::This),
-                        'r' => self.check_keyword(2, 2, "ue",TokenType::True),
+                        'h' => self.check_keyword(2, 2, "is", TokenType::This),
+                        'r' => self.check_keyword(2, 2, "ue", TokenType::True),
                         _ => Ok(TokenType::Identifier),
-
                     }
-                }
-                else {
+                } else {
                     Ok(TokenType::Identifier)
                 }
             }
@@ -146,11 +149,12 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
             return false;
         }
 
-        return true;
+        true
     }
 
     fn is_at_end(&self) -> bool {
-        self.current == self.content.len()
+        trace!("checking for end");
+        self.current >= self.content.len() - 1
     }
 
     fn make_token(&mut self, token_type: TokenType) -> Token {
@@ -161,8 +165,7 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
     }
 
     fn advance(&mut self) -> char {
-        let s = &self.content[self.current..=self.current];
-        let ret = s.to_string().chars().nth(0).expect("Should have at least one char");
+        let ret = self.content[self.current..].chars().next().unwrap_or('\0');
         self.current += 1;
         ret
     }
@@ -177,23 +180,21 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
                 '\n' => {
                     self.line += 1;
                     self.advance();
-                },
+                }
                 '/' => {
                     if self.peek_next() == '/' {
                         while self.peek() != '\n' && !self.is_at_end() {
                             self.advance();
                         }
-                    } 
-
-                },
+                    }
+                }
                 _ => break,
             }
         }
     }
 
     fn peek(&self) -> char {
-        let s = &self.content[self.current..=self.current];
-        s.to_string().chars().nth(0).expect("expect another char")
+        self.content[self.current..].chars().next().unwrap_or('\0')
     }
 
     fn peek_next(&self) -> char {
@@ -201,8 +202,7 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
             return '\0';
         }
         let next = self.current + 1;
-        let s = &self.content[next..=next];
-        s.to_string().chars().nth(0).expect("should have a char")
+        self.content[next..].chars().next().unwrap_or('\0')
     }
 
     fn string(&mut self) -> Result<Token, CloxError> {
@@ -214,7 +214,7 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
         }
 
         if self.is_at_end() {
-            return Err(CloxError::UnterminatedString { line: self.line })
+            return Err(CloxError::UnterminatedString { line: self.line });
         }
 
         self.advance();
@@ -251,9 +251,15 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
         value.is_ascii_alphabetic() || value == '_'
     }
 
-    fn check_keyword(&self, start: usize, length: usize, remaining: &str, token_type: TokenType) -> Result<TokenType, CloxError> {
-        let from = self.start+start;
-        let to = self.start+start+length;
+    fn check_keyword(
+        &self,
+        start: usize,
+        length: usize,
+        remaining: &str,
+        token_type: TokenType,
+    ) -> Result<TokenType, CloxError> {
+        let from = self.start + start;
+        let to = self.start + start + length;
 
         let slice = &self.content[from..to];
 
@@ -261,6 +267,10 @@ impl <'src, 'idx>Scanner<'src, 'idx> {
             return Ok(token_type);
         }
         return Ok(TokenType::Identifier);
+    }
+
+    pub(crate) fn get_str_at(&self, string_id: usize) -> &str {
+        self.string_indexer.get_str_at(string_id)
     }
 }
 
@@ -271,8 +281,7 @@ mod test {
     #[test]
     fn test_check_keyword() {
         let content = "true ";
-        let mut indexer = StringIndexer::new(content);
-        let mut scanner = Scanner::new(content, &mut indexer);
+        let mut scanner = Scanner::new(content);
         let token = scanner.scan_token().unwrap();
         assert_eq!(token.token_type, TokenType::True);
     }

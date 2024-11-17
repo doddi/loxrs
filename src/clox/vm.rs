@@ -1,6 +1,10 @@
-use super::{chunk::Chunk, clox_error::CloxError, compiler::Compiler, opcode::Opcode, scanner::Scanner, stack::Stack, string_indexer::StringIndexer, CloxValue};
+use super::{
+    chunk::Chunk, clox_error::CloxError, compiler::Compiler, opcode::Opcode, stack::Stack,
+    CloxValue,
+};
 
 pub(super) struct Vm {
+    chunk: Chunk,
     ip: usize,
     stack: Stack,
 }
@@ -8,32 +12,39 @@ pub(super) struct Vm {
 impl Vm {
     pub fn new() -> Self {
         Self {
+            chunk: Chunk::new(),
             ip: 0,
             stack: Stack::new(),
         }
     }
 
     pub(super) fn interpret(&mut self, content: &str) -> Result<(), CloxError> {
-        self.compile(content)
-        //self.run(chunk)
+        let mut compiler = Compiler::new();
+        match compiler.compile(content) {
+            Ok(chunk) => {
+                self.chunk = chunk;
+                self.run()
+            }
+            Err(_) => Err(CloxError::CompileError),
+        }
     }
 
-    fn run(&mut self, chunk: &Chunk) -> Result<(), CloxError> {
+    fn run(&mut self) -> Result<(), CloxError> {
         loop {
-            match chunk.get_at(self.ip) {
+            match self.chunk.get_at(self.ip) {
                 Some(opcode) => match opcode {
                     Opcode::Return => {
-                        chunk.print_value(&self.stack.pop()?);
+                        self.chunk.print_value(&self.stack.pop()?);
                         println!("");
-                        return Ok(())
-                    },
+                        return Ok(());
+                    }
                     Opcode::Constant(constant) => self.stack.push(*constant),
                     Opcode::Negate => {
                         let value = self.stack.pop()?;
                         self.stack.push(-value);
                     }
                     Opcode::Add => self.binary_op(|a, b| a + b)?,
-                    Opcode::Sub => self.binary_op(|a, b| a - b)?, 
+                    Opcode::Sub => self.binary_op(|a, b| a - b)?,
                     Opcode::Mul => self.binary_op(|a, b| a * b)?,
                     Opcode::Div => self.binary_op(|a, b| a / b)?,
                 },
@@ -44,21 +55,13 @@ impl Vm {
         }
     }
 
-    fn binary_op<F>(&mut self, op: F) -> Result<(), CloxError> 
-    where F: FnOnce(CloxValue, CloxValue) -> CloxValue {
+    fn binary_op<F>(&mut self, op: F) -> Result<(), CloxError>
+    where
+        F: FnOnce(CloxValue, CloxValue) -> CloxValue,
+    {
         let a = self.stack.pop()?;
         let b = self.stack.pop()?;
         self.stack.push(op(a, b));
-        Ok(())
-    }
-
-    fn compile(&self, content: &str) -> Result<(), CloxError> {
-        let mut indexer = StringIndexer::new(content);
-        let scanner = Scanner::new(content, &mut indexer);
-        let compiler = Compiler::new();
-
-        compiler.compile(&scanner)?;
-
         Ok(())
     }
 }
@@ -69,7 +72,6 @@ mod test {
 
     #[test]
     fn test_vm() {
-
         let mut chunk = Chunk::new();
         chunk.write_chunk(Opcode::Constant(1.2), 123);
         chunk.write_chunk(Opcode::Constant(3.4), 123);
@@ -83,6 +85,6 @@ mod test {
         chunk.write_chunk(Opcode::Return, 123);
 
         let mut vm = Vm::new();
-        let _ = vm.run(&chunk);
+        let _ = vm.run();
     }
 }

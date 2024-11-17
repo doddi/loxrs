@@ -2,7 +2,6 @@ use tracing::trace;
 
 use super::CloxError;
 
-
 #[derive(Debug, PartialEq)]
 pub(crate) struct StringLocation {
     pub(super) start: usize,
@@ -38,5 +37,10 @@ impl<'src> StringIndexer<'src> {
         let string_ref = &self.refs[string_id];
 
         Ok(&self.content[string_ref.start..=string_ref.end])
+    }
+
+    pub(crate) fn get_str_at(&self, string_id: usize) -> &str {
+        let location = &self.refs[string_id];
+        &self.content[location.start..location.end]
     }
 }

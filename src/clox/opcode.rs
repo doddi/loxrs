@@ -1,5 +1,6 @@
 use super::CloxValue;
 
+#[derive(Debug)]
 pub(super) enum Opcode {
     Return,
     Add,

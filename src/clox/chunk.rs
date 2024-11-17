@@ -1,4 +1,7 @@
-use super::{opcode::{self, Opcode}, CloxValue};
+use super::{
+    opcode::{self, Opcode},
+    CloxValue,
+};
 
 pub(super) struct Chunk {
     opcodes: Vec<Opcode>,
@@ -23,7 +26,7 @@ impl Chunk {
     }
 
     // Maybe these can go into some kind of visitor pattern or simlpy part of the Display impl
-    fn disassemble_chunk(&self, source: &str) {
+    pub(super) fn disassemble_chunk(&self, source: &str) {
         println!("== {} ==", source);
 
         self.opcodes.iter().enumerate().for_each(|(idx, opcode)| {
@@ -36,8 +39,7 @@ impl Chunk {
 
         if offset > 0 && self.lines[offset] == self.lines[offset - 1] {
             print!("  | ");
-        }
-        else {
+        } else {
             print!("{:<3} ", self.lines[offset]);
         }
 
@@ -49,19 +51,19 @@ impl Chunk {
             Opcode::Sub => self.simple_instruction("OP_SUB", offset),
             Opcode::Mul => self.simple_instruction("OP_MUL", offset),
             Opcode::Div => self.simple_instruction("OP_DIV", offset),
-        } 
+        }
     }
 
     fn simple_instruction(&self, name: &str, offset: usize) -> usize {
         println!("{name}");
-        return offset + 1
+        return offset + 1;
     }
 
     fn constant_instruction(&self, name: &str, value: &CloxValue, offset: usize) -> usize {
         print!("{} '", name);
         self.print_value(value);
         println!("'");
-        return offset + 1 
+        return offset + 1;
     }
 
     pub(crate) fn print_value(&self, value: &CloxValue) {
@@ -72,7 +74,6 @@ impl Chunk {
 #[cfg(test)]
 mod test {
     use super::Chunk;
-
 
     #[test]
     fn simple_test() {
