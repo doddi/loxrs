@@ -6,5 +6,5 @@ pub enum CloxError {
     UnexpectedToken,
     StringIndexOutOfBouds,
     UnterminatedString { line: usize },
+    CloxValue(String),
 }
-

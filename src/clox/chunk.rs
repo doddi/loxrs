@@ -1,7 +1,4 @@
-use super::{
-    opcode::{self, Opcode},
-    CloxValue,
-};
+use super::{clox_value::CloxValue, opcode::Opcode};
 
 pub(super) struct Chunk {
     opcodes: Vec<Opcode>,
@@ -45,25 +42,32 @@ impl Chunk {
 
         match opcode {
             Opcode::Return => self.simple_instruction("OP_RETURN", offset),
-            Opcode::Constant(value) => self.constant_instruction("OP_CONSTANT", &value, offset),
+            Opcode::Constant(value) => self.constant_instruction("OP_CONSTANT", value, offset),
             Opcode::Negate => self.simple_instruction("OP_NEGATE", offset),
+            Opcode::Nil => self.simple_instruction("OP_NIL", offset),
+            Opcode::True => self.simple_instruction("OP_TRUE", offset),
+            Opcode::False => self.simple_instruction("OP_FALSE", offset),
             Opcode::Add => self.simple_instruction("OP_ADD", offset),
             Opcode::Sub => self.simple_instruction("OP_SUB", offset),
             Opcode::Mul => self.simple_instruction("OP_MUL", offset),
             Opcode::Div => self.simple_instruction("OP_DIV", offset),
+            Opcode::Not => self.simple_instruction("OP_NOT", offset),
+            Opcode::Equal => self.simple_instruction("OP_EQUAL", offset),
+            Opcode::Greater => self.simple_instruction("OP_GREATER", offset),
+            Opcode::Less => self.simple_instruction("OP_LESS", offset),
         }
     }
 
     fn simple_instruction(&self, name: &str, offset: usize) -> usize {
         println!("{name}");
-        return offset + 1;
+        offset + 1
     }
 
     fn constant_instruction(&self, name: &str, value: &CloxValue, offset: usize) -> usize {
         print!("{} '", name);
         self.print_value(value);
         println!("'");
-        return offset + 1;
+        offset + 1
     }
 
     pub(crate) fn print_value(&self, value: &CloxValue) {
@@ -73,13 +77,15 @@ impl Chunk {
 
 #[cfg(test)]
 mod test {
+    use crate::clox::clox_value::CloxValue;
+
     use super::Chunk;
 
     #[test]
     fn simple_test() {
         let mut chunk = Chunk::new();
 
-        chunk.write_chunk(super::Opcode::Constant(1.2), 123);
+        chunk.write_chunk(super::Opcode::Constant(CloxValue::Number(1.2)), 123);
         chunk.write_chunk(super::Opcode::Negate, 123);
         chunk.write_chunk(super::Opcode::Return, 123);
 

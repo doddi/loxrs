@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::{clox_error::CloxError, CloxValue};
+use super::{clox_error::CloxError, clox_value::CloxValue};
 
 pub(super) struct Stack {
     inner: Vec<CloxValue>,
@@ -8,26 +8,27 @@ pub(super) struct Stack {
 
 impl Stack {
     pub(super) fn new() -> Self {
-        Self {
-            inner: Vec::new(),
-        }
+        Self { inner: Vec::new() }
     }
 
     pub(super) fn push(&mut self, value: CloxValue) {
         self.inner.push(value);
     }
 
-    pub(super) fn pop(&mut self) ->Result<CloxValue, CloxError> {
+    pub(super) fn pop(&mut self) -> Result<CloxValue, CloxError> {
         match self.inner.pop() {
             Some(value) => Ok(value),
             None => Err(CloxError::StackUnderflow),
         }
     }
+
+    pub(super) fn peek(&self, distance: usize) -> CloxValue {
+        self.inner[self.inner.len() - distance - 1]
+    }
 }
 
 impl Display for Stack {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-
         let _ = write!(f, "           ");
         for value in self.inner.iter() {
             let _ = write!(f, "[{value}]");
@@ -36,4 +37,3 @@ impl Display for Stack {
         Ok(())
     }
 }
-

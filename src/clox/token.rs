@@ -1,5 +1,7 @@
 use std::usize;
 
+use tracing::trace;
+
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub(super) enum TokenType {
     // Single character tokens
@@ -112,6 +114,7 @@ pub(super) struct Token {
 
 impl Token {
     pub(super) fn new(token_type: TokenType, id: StringId, line: usize) -> Self {
+        trace!("Token::new({:?}, {}, {}", token_type, id, line);
         Self {
             token_type,
             id,

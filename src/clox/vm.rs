@@ -1,12 +1,28 @@
+use tracing::trace;
+
 use super::{
-    chunk::Chunk, clox_error::CloxError, compiler::Compiler, opcode::Opcode, stack::Stack,
-    CloxValue,
+    chunk::Chunk, clox_error::CloxError, clox_value::CloxValue, compiler::Compiler, opcode::Opcode,
+    stack::Stack,
 };
 
 pub(super) struct Vm {
     chunk: Chunk,
     ip: usize,
     stack: Stack,
+}
+
+macro_rules! binary_op{
+    ( $vm:ident, $value_constructor:expr, $op:tt ) => {
+        {
+            if !$vm.stack.peek(0).is_number() || !$vm.stack.peek(1).is_number() {
+                return Err(CloxError::RuntimeError);
+            }
+
+            let b = $vm.stack.pop().expect("").as_number();
+            let a = $vm.stack.pop().expect("").as_number();
+            $vm.stack.push($value_constructor(a $op b));
+        }
+    };
 }
 
 impl Vm {
@@ -41,12 +57,38 @@ impl Vm {
                     Opcode::Constant(constant) => self.stack.push(*constant),
                     Opcode::Negate => {
                         let value = self.stack.pop()?;
-                        self.stack.push(-value);
+                        match value {
+                            CloxValue::Number(number) => {
+                                self.stack.push(CloxValue::Number(-number))
+                            }
+                            _ => unreachable!(),
+                        }
                     }
-                    Opcode::Add => self.binary_op(|a, b| a + b)?,
-                    Opcode::Sub => self.binary_op(|a, b| a - b)?,
-                    Opcode::Mul => self.binary_op(|a, b| a * b)?,
-                    Opcode::Div => self.binary_op(|a, b| a / b)?,
+                    Opcode::Nil => self.stack.push(CloxValue::Nil),
+                    Opcode::True => self.stack.push(CloxValue::Boolean(true)),
+                    Opcode::False => self.stack.push(CloxValue::Boolean(false)),
+                    Opcode::Add => binary_op!(self, CloxValue::new_num, +),
+                    Opcode::Sub => binary_op!(self, CloxValue::new_num, -),
+                    Opcode::Mul => binary_op!(self, CloxValue::new_num, *),
+                    Opcode::Div => binary_op!(self, CloxValue::new_num, /),
+                    Opcode::Not => {
+                        let value = self.stack.pop()?;
+                        trace!("No operation on: {:?}", value);
+                        match value {
+                            CloxValue::Boolean(b) => {
+                                self.stack.push(CloxValue::Boolean(self.is_falsey(b)))
+                            }
+                            CloxValue::Number(_) => unreachable!("Not allowed to not on a number"),
+                            CloxValue::Nil => self.stack.push(CloxValue::Boolean(false)),
+                        }
+                    }
+                    Opcode::Equal => {
+                        let a = self.stack.pop()?;
+                        let b = self.stack.pop()?;
+                        self.stack.push(CloxValue::new_bool(a == b));
+                    }
+                    Opcode::Greater => binary_op!(self, CloxValue::new_bool, >),
+                    Opcode::Less => binary_op!(self,CloxValue::new_bool, <),
                 },
                 None => return Err(CloxError::RuntimeError),
             }
@@ -55,14 +97,8 @@ impl Vm {
         }
     }
 
-    fn binary_op<F>(&mut self, op: F) -> Result<(), CloxError>
-    where
-        F: FnOnce(CloxValue, CloxValue) -> CloxValue,
-    {
-        let a = self.stack.pop()?;
-        let b = self.stack.pop()?;
-        self.stack.push(op(a, b));
-        Ok(())
+    fn is_falsey(&self, value: bool) -> bool {
+        !value
     }
 }
 

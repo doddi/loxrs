@@ -28,18 +28,14 @@ impl<'src> Scanner<'src> {
     }
 
     pub(super) fn scan_token(&mut self) -> Result<Token, CloxError> {
-        trace!("scan_token");
         self.skip_whitespace();
-        trace!("skip");
         self.start = self.current;
 
         if self.is_at_end() {
-            trace!("end of file");
             return Ok(self.make_token(TokenType::Eof));
         }
 
         let c = self.advance();
-        println!("scan_token: {}, start: {}", c, self.start);
 
         match c {
             '(' => Ok(self.make_token(TokenType::LeftParen)),
@@ -55,33 +51,33 @@ impl<'src> Scanner<'src> {
             '*' => Ok(self.make_token(TokenType::Star)),
             '!' => {
                 let result = if self.matches('=') {
-                    self.make_token(TokenType::Bang)
-                } else {
                     self.make_token(TokenType::BangEqual)
+                } else {
+                    self.make_token(TokenType::Bang)
                 };
                 Ok(result)
             }
             '=' => {
                 let result = if self.matches('=') {
-                    self.make_token(TokenType::Equal)
-                } else {
                     self.make_token(TokenType::EqualEqual)
+                } else {
+                    self.make_token(TokenType::Equal)
                 };
                 Ok(result)
             }
             '<' => {
                 let result = if self.matches('=') {
-                    self.make_token(TokenType::Less)
-                } else {
                     self.make_token(TokenType::LessEqual)
+                } else {
+                    self.make_token(TokenType::Less)
                 };
                 Ok(result)
             }
             '>' => {
                 let result = if self.matches('=') {
-                    self.make_token(TokenType::Greater)
-                } else {
                     self.make_token(TokenType::GreaterEqual)
+                } else {
+                    self.make_token(TokenType::Greater)
                 };
                 Ok(result)
             }
@@ -117,7 +113,6 @@ impl<'src> Scanner<'src> {
             's' => self.check_keyword(1, 4, "uper", TokenType::Super),
             't' => {
                 if self.current - self.start > 1 {
-                    println!("{}", self.get_start_offset_char(1));
                     match self.get_start_offset_char(1) {
                         'h' => self.check_keyword(2, 2, "is", TokenType::This),
                         'r' => self.check_keyword(2, 2, "ue", TokenType::True),
@@ -140,7 +135,7 @@ impl<'src> Scanner<'src> {
         check
     }
 
-    fn matches(&self, expect: char) -> bool {
+    fn matches(&mut self, expect: char) -> bool {
         if self.is_at_end() {
             return false;
         }
@@ -149,11 +144,11 @@ impl<'src> Scanner<'src> {
             return false;
         }
 
+        self.current += 1;
         true
     }
 
     fn is_at_end(&self) -> bool {
-        trace!("checking for end");
         self.current >= self.content.len() - 1
     }
 
@@ -237,12 +232,9 @@ impl<'src> Scanner<'src> {
     }
 
     fn identifier(&mut self) -> Result<Token, CloxError> {
-        println!("identifier");
-
         while self.is_alpha(self.peek()) || self.peek().is_ascii_digit() {
             self.advance();
         }
-        println!("{}:{}", self.start, self.current);
 
         Ok(self.make_token(self.identifire_type()?))
     }
@@ -266,7 +258,7 @@ impl<'src> Scanner<'src> {
         if (self.current - self.start == start + length) && (slice == remaining) {
             return Ok(token_type);
         }
-        return Ok(TokenType::Identifier);
+        Ok(TokenType::Identifier)
     }
 
     pub(crate) fn get_str_at(&self, string_id: usize) -> &str {

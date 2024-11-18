@@ -6,8 +6,8 @@ use tracing::trace;
 use crate::clox::token::{Token, TokenType};
 
 use super::{
-    chunk::Chunk, clox_error::CloxError, opcode::Opcode, scanner::Scanner,
-    string_indexer::StringId, CloxValue,
+    chunk::Chunk, clox_error::CloxError, clox_value::CloxValue, opcode::Opcode, scanner::Scanner,
+    string_indexer::StringId,
 };
 
 pub(super) struct Compiler<'src> {
@@ -20,6 +20,7 @@ pub(super) struct Compiler<'src> {
     panic_mode: bool,
 }
 
+#[derive(Debug)]
 enum MessageType<'msg> {
     StringIndex(StringId),
     Message(&'msg str),
@@ -47,7 +48,6 @@ impl<'src> Compiler<'src> {
     }
 
     pub(crate) fn compile(&mut self, source: &'src str) -> Result<Chunk, CloxError> {
-        trace!("compiler starting...");
         self.scanner = Scanner::new(source);
 
         self.has_error = false;
@@ -61,7 +61,6 @@ impl<'src> Compiler<'src> {
         );
 
         self.end_compiler();
-        trace!("compiler complete...");
 
         if self.has_error {
             Err(CloxError::CompileError)
@@ -76,7 +75,6 @@ impl<'src> Compiler<'src> {
         loop {
             match self.scanner.scan_token() {
                 Ok(token) => {
-                    trace!("advance found token: {:?}", token);
                     self.parser.current = Some(token);
                     break;
                 }
@@ -86,7 +84,7 @@ impl<'src> Compiler<'src> {
                         Some(token) => {
                             self.error_at_current(MessageType::StringIndex(token.id));
                         }
-                        None => unreachable!(),
+                        None => unreachable!("advance"),
                     }
                 }
             }
@@ -101,7 +99,6 @@ impl<'src> Compiler<'src> {
     }
 
     fn expression(&mut self) {
-        trace!("expression");
         self.parse_presendence(Precedence::Assignment);
     }
 
@@ -136,6 +133,8 @@ impl<'src> Compiler<'src> {
 
         if !self.has_error {
             self.chunk.disassemble_chunk("test");
+        } else {
+            println!("error compiling");
         }
     }
 
@@ -158,7 +157,8 @@ impl<'src> Compiler<'src> {
         let string_id = self.parser.previous.unwrap().id;
         let value = self.scanner.get_str_at(string_id);
         trace!("parsed number: {}", value);
-        self.emit_constant(value.parse().expect("should expect a float representation"))
+        let val = CloxValue::Number(value.parse().expect("should expect a float"));
+        self.emit_constant(val)
     }
 
     fn grouping(&mut self) {
@@ -170,12 +170,12 @@ impl<'src> Compiler<'src> {
     }
 
     fn unary(&mut self) {
+        let operator_type = self.parser.previous.expect("").token_type;
+        // self.expression();
         self.parse_presendence(Precedence::Unary);
 
-        let operator_type = self.parser.previous.expect("").token_type;
-        self.expression();
-
         match operator_type {
+            TokenType::Bang => self.emit_byte(Opcode::Not),
             TokenType::Minus => self.emit_byte(Opcode::Negate),
             _ => unreachable!(),
         }
@@ -194,6 +194,13 @@ impl<'src> Compiler<'src> {
         self.parse_presendence(precedence);
 
         match operator {
+            TokenType::BangEqual => self.emit_bytes(Opcode::Equal, Opcode::Not),
+            TokenType::EqualEqual => self.emit_byte(Opcode::Equal),
+            TokenType::Greater => self.emit_byte(Opcode::Greater),
+            TokenType::GreaterEqual => self.emit_bytes(Opcode::Less, Opcode::Not),
+            TokenType::Less => self.emit_byte(Opcode::Less),
+            TokenType::LessEqual => self.emit_bytes(Opcode::Greater, Opcode::Not),
+
             TokenType::Plus => self.emit_byte(Opcode::Add),
             TokenType::Minus => self.emit_byte(Opcode::Sub),
             TokenType::Star => self.emit_byte(Opcode::Mul),
@@ -202,7 +209,16 @@ impl<'src> Compiler<'src> {
         }
     }
 
-    fn literal(&mut self) {}
+    fn literal(&mut self) {
+        match self.parser.previous.expect("").token_type {
+            TokenType::False => self.emit_byte(Opcode::False),
+            TokenType::Nil => self.emit_byte(Opcode::Nil),
+            TokenType::True => self.emit_byte(Opcode::True),
+            _ => unreachable!(),
+        }
+    }
+
+    fn string(&mut self) {}
 
     fn emit_constant(&mut self, value: CloxValue) {
         self.emit_byte(Opcode::Constant(value));
@@ -220,8 +236,6 @@ impl<'src> Compiler<'src> {
                 prefix_rule
             );
             prefix_rule(self);
-
-            trace!("after prefix");
 
             while precedence
                 <= self
@@ -279,7 +293,7 @@ fn create_rules<'src>() -> HashMap<TokenType, ParseRule<'src>> {
     add_parse_rule!(parse_rules, TokenType::Less        => None,                        Some(Compiler::binary), Precedence::Comparison);
     add_parse_rule!(parse_rules, TokenType::LessEqual   => None,                        Some(Compiler::binary), Precedence::Comparison);
     add_parse_rule!(parse_rules, TokenType::Identifier  => None,                        None,                   Precedence::None);
-    add_parse_rule!(parse_rules, TokenType::String      => None,                        None,                   Precedence::None);
+    add_parse_rule!(parse_rules, TokenType::String      => Some(Compiler::string),      None,                   Precedence::None);
     add_parse_rule!(parse_rules, TokenType::Number      => Some(Compiler::number),      None,                   Precedence::None);
     add_parse_rule!(parse_rules, TokenType::And         => None,                        None,                   Precedence::None);
     add_parse_rule!(parse_rules, TokenType::Class       => None,                        None,                   Precedence::None);

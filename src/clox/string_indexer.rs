@@ -25,7 +25,6 @@ impl<'src> StringIndexer<'src> {
     }
 
     pub(super) fn add_string(&mut self, start: usize, end: usize) -> StringId {
-        trace!("Adding string with start: {} end: {}", start, end);
         self.refs.push(StringLocation { start, end });
         self.refs.len() - 1
     }
